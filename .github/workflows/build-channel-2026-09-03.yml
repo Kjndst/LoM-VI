@@ -1,0 +1,78 @@
+name: Build LoM-VI translation channel 2026.09.03.3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'channel/build/translation-0902-to-0903.patch.gz'
+      - '.github/workflows/build-channel-2026-09-03.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-translation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct Translation 2026.09.03.3
+        shell: bash
+        run: |
+          set -euo pipefail
+          OLD=/tmp/translation-2026.09.02.1.zip
+          WORK=/tmp/lomvi-translation-work
+          OUT="$GITHUB_WORKSPACE/channel/translation-2026.09.03.3.zip"
+          curl --fail --location --retry 3 \
+            'https://github.com/Kjndst/LoM-VI/releases/download/v0.2.0-data.1/translation-2026.09.02.1.zip' \
+            --output "$OLD"
+          test "$(stat -c '%s' "$OLD")" = '1665844'
+          echo '84a39591498d9e2335e9157930426802d0141b1004307bfd4db04c4e5f4543cc  /tmp/translation-2026.09.02.1.zip' | sha256sum -c -
+          rm -rf "$WORK"
+          mkdir -p "$WORK"
+          unzip -q "$OLD" -d "$WORK"
+          gzip -dc "$GITHUB_WORKSPACE/channel/build/translation-0902-to-0903.patch.gz" \
+            | patch -p4 -d "$WORK" --batch --forward
+          python3 - "$WORK" "$OUT" <<'PY'
+          import os
+          import sys
+          import zipfile
+
+          root, out = sys.argv[1:]
+          files = []
+          for dirpath, dirnames, filenames in os.walk(root):
+              dirnames.sort()
+              filenames.sort()
+              for filename in filenames:
+                  path = os.path.join(dirpath, filename)
+                  rel = os.path.relpath(path, root).replace(os.sep, '/')
+                  files.append((rel, path))
+
+          with zipfile.ZipFile(out, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+              for rel, path in sorted(files):
+                  info = zipfile.ZipInfo(rel, (2026, 1, 1, 0, 0, 0))
+                  info.compress_type = zipfile.ZIP_DEFLATED
+                  info.create_system = 3
+                  info.external_attr = (0o100644 << 16)
+                  with open(path, 'rb') as handle:
+                      data = handle.read()
+                  archive.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+          PY
+          test "$(stat -c '%s' "$OUT")" = '1669071'
+          echo '5a58e08ec758e0c7824c8eccda71ab3cb7e4e5165da5de13a60002d65f60e87d  channel/translation-2026.09.03.3.zip' | sha256sum -c -
+
+      - name: Publish reconstructed payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add channel/translation-2026.09.03.3.zip
+          if git diff --cached --quiet; then
+            echo 'Translation payload already current.'
+            exit 0
+          fi
+          git commit -m 'channel: publish translation 2026.09.03.3'
+          git push origin HEAD:main
