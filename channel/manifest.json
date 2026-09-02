@@ -2,8 +2,8 @@
   "schema": "lomvi.release.v2",
   "product": "Lord of Mysteries – Việt Hóa",
   "channel": "stable",
-  "published_at": "2026-09-03T00:00:00+07:00",
-  "min_launcher": "0.2.0-dev.5",
+  "published_at": "2026-09-03T03:40:00+07:00",
+  "min_launcher": "0.2.0-dev.6",
   "runtime": {
     "translation_mode": "sparse-pass-through",
     "preserve_underlay": true,
