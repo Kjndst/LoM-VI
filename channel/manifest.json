@@ -2,7 +2,7 @@
   "schema": "lomvi.release.v2",
   "product": "Lord of Mysteries – Việt Hóa",
   "channel": "stable",
-  "published_at": "2026-09-03T05:11:00+07:00",
+  "published_at": "2026-09-03T06:16:02+07:00",
   "min_launcher": "0.2.0-dev.8",
   "runtime": {
     "translation_mode": "sparse-pass-through",
@@ -47,10 +47,10 @@
       "notes": "23208 effective translations from canonical DB; owner-approved UI-short and damage-layer taxonomy through 2026-09-03."
     },
     "font": {
-      "version": "2026.09.03.1",
-      "url": "local://vn-font",
-      "sha256": "2e85db214dfeb63c6d470a392bfc2812cbe1afe89e867c01768ad5c5e8a69e00",
-      "size": 1427266,
+      "version": "2026.09.03.2",
+      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/font-2026.09.03.2.zip",
+      "sha256": "a3e99de94aee31450ea13ec395143f1e58ea52797d80cb467883843c7a479a62",
+      "size": 650818,
       "archive_root": "game",
       "managed_roots": [
         "Content/Paks/pakchunk99999-Windows_999999_VN_FONT_P.pak"
@@ -58,8 +58,8 @@
       "remove_before": [
         "Content/Paks/pakchunk99999-Windows_999999_VI_FONT_TEST_P.pak"
       ],
-      "install_mode": "local-vn-font-migrate",
-      "notes": "VN Font: Spectral SemiBold + IBM Plex Sans Condensed Medium. Local verified migration; final game filename contains VN_FONT and no TEST marker."
+      "install_mode": "files",
+      "notes": "VN Font component packaged for normal HTTPS download/update. Independent from Translation; final game filename uses VN_FONT."
     }
   }
 }
