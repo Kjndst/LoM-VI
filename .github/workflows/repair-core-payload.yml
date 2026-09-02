@@ -1,0 +1,91 @@
+name: Repair Core 0.2.0.4 payload
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-core-payload.yml'
+      - 'channel/build/BootstrapFactory-0.2.0.4.lua.gz.b64'
+
+permissions:
+  contents: write
+
+jobs:
+  repair-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Rebuild and verify Core
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json, os, zipfile
+
+          core = 'channel/core-0.2.0.4.zip'
+          source = 'channel/build/BootstrapFactory-0.2.0.4.lua.gz.b64'
+          manifest_path = 'channel/manifest.json'
+
+          names = {
+              'bootstrap': 'game/Saved/Mods/bootstrap.lua',
+              'factory': 'game/Saved/Mods/lua/mods/lom_vi/BootstrapFactory.lua',
+              'init': 'game/Saved/Mods/lua/mods/lom_vi/Init.lua',
+          }
+          with zipfile.ZipFile(core, 'r') as old:
+              bootstrap = old.read(names['bootstrap'])
+              init = old.read(names['init'])
+
+          with open(source, encoding='ascii') as handle:
+              factory = gzip.decompress(base64.b64decode(handle.read().strip()))
+
+          expected = {
+              'bootstrap': 'b49c783eee9a3eda70ac08c80a606a680bb4d14d8ae1d80c0f9cb9730548090c',
+              'factory': '0e892ff640c262d9b8712737c3d3be02e75f73b3bd71896482e839c67a3a0d28',
+              'init': 'f282e502733c254906476e58cdcf24200e8c5e5820b829a1d3cd199d2a2be806',
+          }
+          payloads = {'bootstrap': bootstrap, 'factory': factory, 'init': init}
+          for key, data in payloads.items():
+              got = hashlib.sha256(data).hexdigest()
+              assert got == expected[key], (key, got, expected[key])
+
+          tmp = core + '.rebuilt'
+          with zipfile.ZipFile(tmp, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as out:
+              for key in ('bootstrap', 'factory', 'init'):
+                  info = zipfile.ZipInfo(names[key], (2026, 1, 1, 0, 0, 0))
+                  info.compress_type = zipfile.ZIP_DEFLATED
+                  info.create_system = 3
+                  info.external_attr = (0o100644 << 16)
+                  out.writestr(info, payloads[key], compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+
+          with zipfile.ZipFile(tmp, 'r') as check:
+              assert check.testzip() is None
+              assert set(check.namelist()) == set(names.values())
+
+          os.replace(tmp, core)
+          data = open(core, 'rb').read()
+          sha = hashlib.sha256(data).hexdigest()
+          size = len(data)
+          print('REBUILT_CORE_SHA256=' + sha)
+          print('REBUILT_CORE_SIZE=' + str(size))
+
+          with open(manifest_path, encoding='utf-8') as handle:
+              manifest = json.load(handle)
+          manifest['components']['core']['sha256'] = sha
+          manifest['components']['core']['size'] = size
+          manifest['components']['core']['notes'] = 'Core 0.2.0.4: CRC-verified rebuilt payload; bounded NativeScan UI coverage with sparse fallback and safe loader migration.'
+          with open(manifest_path, 'w', encoding='utf-8', newline='\n') as handle:
+              json.dump(manifest, handle, ensure_ascii=False, indent=2)
+              handle.write('\n')
+          PY
+          unzip -t channel/core-0.2.0.4.zip
+      - name: Publish repaired Core and manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add channel/core-0.2.0.4.zip channel/manifest.json
+          git commit -m 'fix: rebuild Core 0.2.0.4 with verified CRC'
+          git push origin HEAD:main
