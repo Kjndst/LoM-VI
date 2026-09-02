@@ -2,8 +2,8 @@
   "schema": "lomvi.release.v2",
   "product": "Lord of Mysteries – Việt Hóa",
   "channel": "stable",
-  "published_at": "2026-09-03T00:08:00+07:00",
-  "min_launcher": "0.2.0-dev.3",
+  "published_at": "2026-09-03T00:00:00+07:00",
+  "min_launcher": "0.2.0-dev.5",
   "runtime": {
     "translation_mode": "sparse-pass-through",
     "preserve_underlay": true,
@@ -16,10 +16,10 @@
   },
   "components": {
     "core": {
-      "version": "0.2.0.3",
-      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.3.zip",
-      "sha256": "6ef06acb88f800c738af5cc6eabc47c935235ac19045524024d061580f920283",
-      "size": 4972,
+      "version": "0.2.0.4",
+      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip",
+      "sha256": "417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e",
+      "size": 8052,
       "archive_root": "game",
       "managed_roots": [
         "Saved/Mods/lua/mods/lom_vi",
@@ -29,13 +29,13 @@
         "Saved/Mods/lua/mods/lom_vi/SafeFragments.lua"
       ],
       "install_mode": "lommodloader",
-      "notes": "Core 0.2.0.3: verified 4972-byte migration payload; preserves English LOMModLoader or migrates historical LoM-VI sparse loaders."
+      "notes": "Core 0.2.0.4: restores bounded NativeScan runtime UI coverage while preserving English underlay and legacy migration."
     },
     "translation": {
-      "version": "2026.09.02.1",
-      "url": "https://github.com/Kjndst/LoM-VI/releases/download/v0.2.0-data.1/translation-2026.09.02.1.zip",
-      "sha256": "84a39591498d9e2335e9157930426802d0141b1004307bfd4db04c4e5f4543cc",
-      "size": 1665844,
+      "version": "2026.09.03.3",
+      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.3.zip",
+      "sha256": "5a58e08ec758e0c7824c8eccda71ab3cb7e4e5165da5de13a60002d65f60e87d",
+      "size": 1669071,
       "archive_root": "game",
       "managed_roots": [
         "Saved/Mods/lua/mods/lom_vi"
@@ -44,7 +44,22 @@
         "core"
       ],
       "install_mode": "files",
-      "notes": "23208 effective translations from canonical DB."
+      "notes": "23208 effective translations from canonical DB; owner-approved UI-short and damage-layer taxonomy through 2026-09-03."
+    },
+    "font": {
+      "version": "2026.09.03.1",
+      "url": "local://vn-font",
+      "sha256": "2e85db214dfeb63c6d470a392bfc2812cbe1afe89e867c01768ad5c5e8a69e00",
+      "size": 1427266,
+      "archive_root": "game",
+      "managed_roots": [
+        "Content/Paks/pakchunk99999-Windows_999999_VN_FONT_P.pak"
+      ],
+      "remove_before": [
+        "Content/Paks/pakchunk99999-Windows_999999_VI_FONT_TEST_P.pak"
+      ],
+      "install_mode": "local-vn-font-migrate",
+      "notes": "VN Font: Spectral SemiBold + IBM Plex Sans Condensed Medium. Local verified migration; final game filename contains VN_FONT and no TEST marker."
     }
   }
 }

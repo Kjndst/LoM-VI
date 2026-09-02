@@ -1,10 +1,14 @@
-# LoM-VI update channel
+# LoM-VI Channel
 
-Machine-consumed update channel for the LoM-VI Thin Client.
+Public thin-client payload channel for Lord of Mysteries – Việt Hóa.
 
-- `manifest.json`: current channel manifest.
-- `core-0.2.0.2.zip`: runtime integration layer.
-- Translation payload remains versioned as a GitHub Release asset.
-- The launcher verifies declared SHA-256 and size before installation.
+Current live candidate:
+- Launcher: 0.2.0-dev.5+
+- Core: 0.2.0.4
+- Translation: 2026.09.03.3
+- VN Font: 2026.09.03.1
 
-Core 0.2.0.2 supports both an existing `LOMModLoader` underlay and migration from the historical LoM-VI sparse loader. It does not require or install the English Patch.
+Final VN Font game filename:
+`Content/Paks/pakchunk99999-Windows_999999_VN_FONT_P.pak`
+
+VN Font is installed by locally migrating an exact verified font PAK already present on the tester's machine. No font binary is distributed by this channel.
