@@ -29,7 +29,7 @@
         "Saved/Mods/lua/mods/lom_vi/SafeFragments.lua"
       ],
       "install_mode": "lommodloader",
-      "notes": "Core 0.2.0.4: restores bounded NativeScan runtime UI coverage while preserving English underlay and legacy migration."
+      "notes": "Core 0.2.0.4: CRC-verified rebuilt payload; bounded NativeScan UI coverage with sparse fallback and safe loader migration."
     },
     "translation": {
       "version": "2026.09.03.3",
