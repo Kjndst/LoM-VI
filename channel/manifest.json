@@ -2,7 +2,7 @@
   "schema": "lomvi.release.v2",
   "product": "Lord of Mysteries – Việt Hóa",
   "channel": "stable",
-  "published_at": "2026-09-03T00:00:00+07:00",
+  "published_at": "2026-09-03T00:08:00+07:00",
   "min_launcher": "0.2.0-dev.3",
   "runtime": {
     "translation_mode": "sparse-pass-through",
@@ -16,8 +16,8 @@
   },
   "components": {
     "core": {
-      "version": "0.2.0.2",
-      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.2.zip",
+      "version": "0.2.0.3",
+      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.3.zip",
       "sha256": "6ef06acb88f800c738af5cc6eabc47c935235ac19045524024d061580f920283",
       "size": 4972,
       "archive_root": "game",
@@ -29,7 +29,7 @@
         "Saved/Mods/lua/mods/lom_vi/SafeFragments.lua"
       ],
       "install_mode": "lommodloader",
-      "notes": "Core 0.2.0.2: preserves English LOMModLoader or migrates historical LoM-VI NativeScan/LIVEFIX loaders automatically."
+      "notes": "Core 0.2.0.3: verified 4972-byte migration payload; preserves English LOMModLoader or migrates historical LoM-VI sparse loaders."
     },
     "translation": {
       "version": "2026.09.02.1",
