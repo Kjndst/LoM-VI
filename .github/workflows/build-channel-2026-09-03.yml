@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'channel/build/translation-0902-to-0903.patch.gz'
+      - 'channel/build/translation-line-delta.part-*'
       - '.github/workflows/build-channel-2026-09-03.yml'
 
 permissions:
@@ -24,6 +24,8 @@ jobs:
           set -euo pipefail
           OLD=/tmp/translation-2026.09.02.1.zip
           WORK=/tmp/lomvi-translation-work
+          DELTA_XZ=/tmp/translation-line-delta.json.xz
+          DELTA=/tmp/translation-line-delta.json
           OUT="$GITHUB_WORKSPACE/channel/translation-2026.09.03.3.zip"
           curl --fail --location --retry 3 \
             'https://github.com/Kjndst/LoM-VI/releases/download/v0.2.0-data.1/translation-2026.09.02.1.zip' \
@@ -33,8 +35,33 @@ jobs:
           rm -rf "$WORK"
           mkdir -p "$WORK"
           unzip -q "$OLD" -d "$WORK"
-          gzip -dc "$GITHUB_WORKSPACE/channel/build/translation-0902-to-0903.patch.gz" \
-            | patch -p4 -d "$WORK" --batch --forward
+          cat "$GITHUB_WORKSPACE"/channel/build/translation-line-delta.part-* > "$DELTA_XZ"
+          xz -t "$DELTA_XZ"
+          xz -dc "$DELTA_XZ" > "$DELTA"
+          python3 - "$WORK" "$DELTA" <<'PY'
+          import json
+          import os
+          import sys
+
+          root, delta_path = sys.argv[1:]
+          with open(delta_path, encoding='utf-8') as handle:
+              delta = json.load(handle)
+
+          for rel, spec in delta['files'].items():
+              path = os.path.join(root, *rel.split('/'))
+              if os.path.exists(path):
+                  with open(path, encoding='utf-8', newline='') as handle:
+                      lines = handle.readlines()
+              else:
+                  lines = []
+              assert len(lines) == spec['old_lines'], (rel, len(lines), spec['old_lines'])
+              for i1, i2, newlines in reversed(spec['ops']):
+                  lines[i1:i2] = newlines
+              assert len(lines) == spec['new_lines'], (rel, len(lines), spec['new_lines'])
+              os.makedirs(os.path.dirname(path), exist_ok=True)
+              with open(path, 'w', encoding='utf-8', newline='') as handle:
+                  handle.writelines(lines)
+          PY
           python3 - "$WORK" "$OUT" <<'PY'
           import os
           import sys
@@ -57,8 +84,7 @@ jobs:
                   info.create_system = 3
                   info.external_attr = (0o100644 << 16)
                   with open(path, 'rb') as handle:
-                      data = handle.read()
-                  archive.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+                      archive.writestr(info, handle.read(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
           PY
           test "$(stat -c '%s' "$OUT")" = '1669071'
           echo '5a58e08ec758e0c7824c8eccda71ab3cb7e4e5165da5de13a60002d65f60e87d  channel/translation-2026.09.03.3.zip' | sha256sum -c -
