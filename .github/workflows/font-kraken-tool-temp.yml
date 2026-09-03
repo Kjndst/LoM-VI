@@ -1,0 +1,68 @@
+name: Build temporary LoM-VI Kraken tool
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/font-kraken-tool-temp.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-tool:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build pinned Kraken block tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --recurse-submodules https://github.com/oMaN-Rod/ooz-rs.git /tmp/ooz-rs
+          git -C /tmp/ooz-rs checkout c197be7a4b49b2f37f339888da1c10ab87780c19
+          git -C /tmp/ooz-rs submodule update --init --recursive
+          test "$(git -C /tmp/ooz-rs rev-parse HEAD)" = c197be7a4b49b2f37f339888da1c10ab87780c19
+          test "$(git -C /tmp/ooz-rs/ooz rev-parse HEAD)" = b938f47dd2e7ade6a503993ab30e0cde734bbd47
+          mkdir -p /tmp/kraken-tool/src /tmp/out
+          cat >/tmp/kraken-tool/Cargo.toml <<'TOML'
+          [package]
+          name = "lomvi-kraken-build"
+          version = "0.0.0"
+          edition = "2021"
+
+          [dependencies]
+          ooz-rs = { path = "/tmp/ooz-rs" }
+          TOML
+          cat >/tmp/kraken-tool/src/main.rs <<'RS'
+          use ooz_rs::{compress, decompress, OodleCompressor, OodleLevel};
+          use std::{env, fs, path::Path};
+          const BLOCK: usize = 65536;
+          fn main() {
+              let args: Vec<String> = env::args().collect();
+              assert_eq!(args.len(), 3, "usage: tool INPUT_FILE OUT_DIR");
+              let input = Path::new(&args[1]);
+              let out = Path::new(&args[2]);
+              fs::create_dir_all(out).unwrap();
+              let raw = fs::read(input).unwrap();
+              let mut manifest = format!("schema=lomvi.kraken.single.v1\nfile={}\nraw_bytes={}\nblock_size={}\nblocks={}\n", input.file_name().unwrap().to_string_lossy(), raw.len(), BLOCK, (raw.len()+BLOCK-1)/BLOCK);
+              for (i, block) in raw.chunks(BLOCK).enumerate() {
+                  let compressed = compress(OodleCompressor::Kraken, OodleLevel::Normal, block).unwrap();
+                  let roundtrip = decompress(&compressed, block.len()).unwrap();
+                  assert_eq!(roundtrip.as_slice(), block);
+                  let name = format!("block{:03}.kraken", i);
+                  fs::write(out.join(&name), &compressed).unwrap();
+                  manifest.push_str(&format!("{}\t{}\t{}\t{}\n", i, block.len(), compressed.len(), name));
+              }
+              fs::write(out.join("manifest.tsv"), manifest).unwrap();
+          }
+          RS
+          cargo build --release --manifest-path /tmp/kraken-tool/Cargo.toml
+          cp /tmp/kraken-tool/target/release/lomvi-kraken-build /tmp/out/lomvi-kraken-build
+          sha256sum /tmp/out/lomvi-kraken-build > /tmp/out/SHA256SUMS.txt
+      - name: Upload temporary encoder
+        uses: actions/upload-artifact@v4
+        with:
+          name: lomvi-kraken-tool-linux
+          path: /tmp/out
+          if-no-files-found: error
+          retention-days: 1
