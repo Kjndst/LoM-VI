@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using CUE4Parse.Compression;
+using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
+using CUE4Parse.UE4.Objects.Core.Misc;
 using CUE4Parse.UE4.Pak.Objects;
 using CUE4Parse.UE4.Versions;
 using CUE4Parse.UE4.VirtualFileSystem;
@@ -80,6 +82,14 @@ try
         v.HasDirectoryIndex,
         Game = v.Game.ToString()
     }).ToArray();
+    report["required_key_count_before_submit"] = provider.RequiredKeys.Count;
+
+    // LoM/C7 PAK v12 uses this AES-256 key for the encrypted index. This key was
+    // independently verified by the existing read-only LoM font audit and is
+    // only used here to read/mount the selected PAK.
+    var lomAes = new FAesKey("A0AF3B78F3C87AC5E2454051FCECE197F664CBE049D6D453CC641F002BC517D3");
+    var keySubmitCount = provider.SubmitKey(new FGuid(), lomAes);
+    report["key_submit_count"] = keySubmitCount;
 
     var mounted = provider.Mount();
     report["mount_return_count"] = mounted;
