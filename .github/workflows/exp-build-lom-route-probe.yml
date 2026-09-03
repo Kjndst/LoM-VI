@@ -1,0 +1,107 @@
+name: EXP build LoM current-CUE4Parse route probe
+
+on:
+  push:
+    branches:
+      - exp/community-iostore-font-route
+    paths:
+      - experiments/community-route-probe/**
+      - .github/workflows/exp-build-lom-route-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact: lomvi-current-cue4parse-route-probe-win64
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact: lomvi-current-cue4parse-route-probe-linux64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout experiment branch
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Clone pinned current CUE4Parse
+        shell: bash
+        run: |
+          git clone --recursive https://github.com/FabianFG/CUE4Parse.git external/CUE4Parse
+          git -C external/CUE4Parse checkout 52d7de4abec1368459d566e4a6ec4060e9626329
+          git -C external/CUE4Parse submodule update --init --recursive
+          echo "CUE4Parse=$(git -C external/CUE4Parse rev-parse HEAD)"
+
+      - name: Publish probe
+        shell: bash
+        run: |
+          dotnet publish experiments/community-route-probe/CommunityRouteProbe.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:PublishTrimmed=false \
+            -p:CUE4PARSE_SKIP_NATIVE=true \
+            -o out/${{ matrix.rid }}
+
+      - name: Prime compression libraries on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $oodleZip = Join-Path $env:TEMP 'oodleue.zip'
+          $oodleDir = Join-Path $env:TEMP 'oodleue'
+          Invoke-WebRequest -Uri 'https://github.com/WorkingRobot/OodleUE/releases/download/2026-01-25-1223/clang-cl-x64-release.zip' -OutFile $oodleZip
+          Expand-Archive -LiteralPath $oodleZip -DestinationPath $oodleDir -Force
+          Copy-Item (Join-Path $oodleDir 'bin/oodle-data-shared.dll') 'out/win-x64/oodle-data-shared.dll' -Force
+
+          $gz = Join-Path $env:TEMP 'zlib-ng2.dll.gz'
+          Invoke-WebRequest -Uri 'https://github.com/NotOfficer/Zlib-ng.NET/releases/download/1.0.0/zlib-ng2.dll.gz' -OutFile $gz
+          $inStream = [IO.File]::OpenRead($gz)
+          try {
+            $gzip = [IO.Compression.GZipStream]::new($inStream, [IO.Compression.CompressionMode]::Decompress)
+            try {
+              $outStream = [IO.File]::Create((Join-Path $PWD 'out/win-x64/zlib-ng2.dll'))
+              try { $gzip.CopyTo($outStream) } finally { $outStream.Dispose() }
+            } finally { $gzip.Dispose() }
+          } finally { $inStream.Dispose() }
+
+      - name: Prime compression libraries on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L 'https://github.com/WorkingRobot/OodleUE/releases/download/2026-01-25-1223/gcc-x64-release.zip' -o /tmp/oodleue.zip
+          unzip -q /tmp/oodleue.zip -d /tmp/oodleue
+          cp /tmp/oodleue/lib/liboodle-data-shared.so out/linux-x64/liboodle-data-shared.so
+          curl -L 'https://github.com/NotOfficer/Zlib-ng.NET/releases/download/1.0.0/libz-ng.so.gz' -o /tmp/libz-ng.so.gz
+          gzip -dc /tmp/libz-ng.so.gz > out/linux-x64/libz-ng.so
+          chmod +x out/linux-x64/CommunityRouteProbe
+
+      - name: Record authority
+        shell: bash
+        run: |
+          cat > out/${{ matrix.rid }}/AUTHORITY.txt <<'EOF'
+          CUE4Parse=52d7de4abec1368459d566e4a6ec4060e9626329
+          Game=GAME_LordOfMysteries
+          Purpose=direct read-only PAK inspection; no directory scan, no hardlinks, no game writes
+          EOF
+          ls -lah out/${{ matrix.rid }}
+
+      - name: Upload probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: out/${{ matrix.rid }}/*
+          if-no-files-found: error
+          retention-days: 1
