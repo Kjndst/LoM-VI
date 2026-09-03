@@ -1,0 +1,67 @@
+{
+  "schema": "lomvi.release.v2",
+  "product": "Lord of Mysteries – Việt Hóa",
+  "channel": "dev17-font-payload-only",
+  "published_at": "2026-09-03T13:30:00+07:00",
+  "runtime": {
+    "translation_mode": "sparse-pass-through",
+    "preserve_underlay": true,
+    "fallback_order": [
+      "lom-vi",
+      "english-patch",
+      "zh-cn"
+    ],
+    "loader_contract": "lommodloader-or-lomvi-legacy"
+  },
+  "components": {
+    "core": {
+      "version": "0.2.0.4",
+      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip",
+      "sha256": "417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e",
+      "size": 8052,
+      "archive_root": "game",
+      "managed_roots": [
+        "Saved/Mods/lua/mods/lom_vi",
+        "Saved/Mods/bootstrap.lua"
+      ],
+      "remove_before": [
+        "Saved/Mods/lua/mods/lom_vi/SafeFragments.lua"
+      ],
+      "install_mode": "lommodloader",
+      "notes": "Core 0.2.0.4 stable runtime."
+    },
+    "translation": {
+      "version": "2026.09.03.4",
+      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip",
+      "sha256": "33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70",
+      "size": 1668931,
+      "archive_root": "game",
+      "managed_roots": [
+        "Saved/Mods/lua/mods/lom_vi"
+      ],
+      "depends_on": [
+        "core"
+      ],
+      "install_mode": "files",
+      "notes": "Terminology refresh: Bí Cảnh, Thế Thân, Thần Bài, Số Mệnh."
+    },
+    "font": {
+      "version": "2026.09.03.9",
+      "url": "https://github.com/Kjndst/LoM-VI/releases/download/v0.2.0-data.1/font-2026.09.03.4.zip",
+      "sha256": "29a4a9f07ae5a6213eb14ff1b8c04b64a13ec22960021126a668ad32cb3c3252",
+      "size": 2351329,
+      "archive_root": "game",
+      "managed_roots": [
+        "Content/Paks/pakchunk99999-Windows_VN_FONT_999_P.pak",
+        "Content/Paks/pakchunk99999-Windows_VN_FONT_999_P.ucas",
+        "Content/Paks/pakchunk99999-Windows_VN_FONT_999_P.utoc"
+      ],
+      "remove_before": [
+        "Content/Paks/pakchunk99999-Windows_999999_VN_FONT_P.pak",
+        "Content/Paks/pakchunk99999-Windows_999999_VI_FONT_TEST_P.pak"
+      ],
+      "install_mode": "files",
+      "notes": "EXPERIMENTAL isolation dev.17: exact same Font payload/container as dev.13-dev.16, but metadata routing is fully disabled. Payload PAK/UCAS/UTOC ON; A local.cache OFF; B Content/inner.cache OFF; C active package manifest OFF. Used only to determine whether the container payload itself triggers the in-game asset updater."
+    }
+  }
+}
