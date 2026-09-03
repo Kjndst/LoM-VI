@@ -31,10 +31,10 @@
       "notes": "Core 0.2.0.4: CRC-verified rebuilt payload; bounded NativeScan UI coverage with sparse fallback and safe loader migration."
     },
     "translation": {
-      "version": "2026.09.03.3",
-      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.3.zip",
-      "sha256": "5a58e08ec758e0c7824c8eccda71ab3cb7e4e5165da5de13a60002d65f60e87d",
-      "size": 1669071,
+      "version": "2026.09.03.4",
+      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip",
+      "sha256": "33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70",
+      "size": 1668931,
       "archive_root": "game",
       "managed_roots": [
         "Saved/Mods/lua/mods/lom_vi"
@@ -43,7 +43,7 @@
         "core"
       ],
       "install_mode": "files",
-      "notes": "23208 effective translations from canonical DB; owner-approved UI-short and damage-layer taxonomy through 2026-09-03."
+      "notes": "Terminology refresh: Bí Cảnh, Thế Thân, Thần Bài, Số Mệnh; otherwise identical translation/runtime coverage to 2026.09.03.3."
     },
     "font": {
       "version": "2026.09.03.2",
