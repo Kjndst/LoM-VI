@@ -36,7 +36,7 @@ Areas:
 - `LVI-GAME-003` — current game build is not approved for a build-bound component.
 - `LVI-CORE-001` — current loader/runtime shape cannot be repaired safely/automatically.
 - `LVI-DATA-001` — translation package requires a missing component/version.
-- `LVI-FONT-001` — local VN Font source candidate is missing or fails verification.
+- `LVI-FONT-001` — Font Việt Hoá payload is unavailable, invalid, or fails verification/integration.
 - `LVI-APPLY-001` — elevated apply/rollback/integration failed.
 - `LVI-STATE-001` — local state, install plan, or cache metadata is invalid/corrupt.
 - `LVI-SYS-001` — unexpected internal error not yet assigned a more specific code.
