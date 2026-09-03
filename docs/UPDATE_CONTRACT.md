@@ -38,6 +38,12 @@ A new launcher EXE is not required for ordinary Translation, Core/hook, or Font 
 - launcher UI/UX changes;
 - new security/integrity behavior that cannot be delivered through an existing component.
 
+### No minimum-launcher component gate
+
+The stable `lomvi.release.v2` channel does not use `min_launcher` to mark Translation, Core or Font incompatible. Launcher age must never turn otherwise valid localization components into `Chưa tương thích`.
+
+If a future launcher introduces a genuinely incompatible update protocol, publish a new manifest schema/channel contract and handle that explicitly at launcher level. Do not reuse component compatibility as a launcher-version gate.
+
 ## Release invariants
 
 1. Every changed component gets a new version.
@@ -46,3 +52,4 @@ A new launcher EXE is not required for ordinary Translation, Core/hook, or Font 
 4. Do not silently replace a published payload while keeping the same version.
 5. Translation remains sparse/permissive; missing UI coverage is repaired by Core rather than falsely marking valid Translation data incompatible.
 6. User-facing actions stay simple: Install / Update / Uninstall. Component dependency planning is automatic.
+7. Never report install/update success until the launcher verifies the final managed state on disk/runtime. An operation returning without an error is not sufficient proof of success.
