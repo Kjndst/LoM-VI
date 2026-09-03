@@ -1,0 +1,122 @@
+{
+  "schema": "lomvi.release.v2",
+  "product": "Lord of Mysteries – Việt Hóa",
+  "channel": "dev14-font-inner-only",
+  "published_at": "2026-09-03T12:00:00+07:00",
+  "runtime": {
+    "translation_mode": "sparse-pass-through",
+    "preserve_underlay": true,
+    "fallback_order": [
+      "lom-vi",
+      "english-patch",
+      "zh-cn"
+    ],
+    "loader_contract": "lommodloader-or-lomvi-legacy"
+  },
+  "components": {
+    "core": {
+      "version": "0.2.0.4",
+      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip",
+      "sha256": "417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e",
+      "size": 8052,
+      "archive_root": "game",
+      "managed_roots": [
+        "Saved/Mods/lua/mods/lom_vi",
+        "Saved/Mods/bootstrap.lua"
+      ],
+      "remove_before": [
+        "Saved/Mods/lua/mods/lom_vi/SafeFragments.lua"
+      ],
+      "install_mode": "lommodloader",
+      "notes": "Core 0.2.0.4 stable runtime."
+    },
+    "translation": {
+      "version": "2026.09.03.4",
+      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip",
+      "sha256": "33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70",
+      "size": 1668931,
+      "archive_root": "game",
+      "managed_roots": [
+        "Saved/Mods/lua/mods/lom_vi"
+      ],
+      "depends_on": [
+        "core"
+      ],
+      "install_mode": "files",
+      "notes": "Terminology refresh: Bí Cảnh, Thế Thân, Thần Bài, Số Mệnh."
+    },
+    "font": {
+      "version": "2026.09.03.6",
+      "url": "https://github.com/Kjndst/LoM-VI/releases/download/v0.2.0-data.1/font-2026.09.03.4.zip",
+      "sha256": "29a4a9f07ae5a6213eb14ff1b8c04b64a13ec22960021126a668ad32cb3c3252",
+      "size": 2351329,
+      "archive_root": "game",
+      "managed_roots": [
+        "Content/Paks/pakchunk99999-Windows_VN_FONT_999_P.pak",
+        "Content/Paks/pakchunk99999-Windows_VN_FONT_999_P.ucas",
+        "Content/Paks/pakchunk99999-Windows_VN_FONT_999_P.utoc"
+      ],
+      "remove_before": [
+        "Content/Paks/pakchunk99999-Windows_999999_VN_FONT_P.pak",
+        "Content/Paks/pakchunk99999-Windows_999999_VI_FONT_TEST_P.pak"
+      ],
+      "install_mode": "files+c7-inner-manifest",
+      "notes": "EXPERIMENTAL isolation dev.14: exact same Font payload/container as dev.13; B = C7/Content/inner.cache ON; A = local.cache OFF; C = active package manifest OFF. Launcher dev.14 implements B-only semantics transactionally.",
+      "c7_active_routes": {
+        "pak_path": "Content/Paks/pakchunk99999-Windows_VN_FONT_999_P.pak",
+        "pak_sha256": "2e85db214dfeb63c6d470a392bfc2812cbe1afe89e867c01768ad5c5e8a69e00",
+        "entries": [
+          {
+            "path": "C7/Content/Arts/UI_2/Resource/Font/Aleo_Regular.ufont",
+            "chunk_id": "85bc60449f1d01ab5b1fdc07",
+            "crc32": "66b04c10",
+            "offset": 111290,
+            "compressed_size": 111184
+          },
+          {
+            "path": "C7/Content/Arts/UI_2/Resource/Font/Aleo_Regular_SDF.ufont",
+            "chunk_id": "0dc9c3ba777620510a807307",
+            "crc32": "66b04c10",
+            "offset": 53,
+            "compressed_size": 111184
+          },
+          {
+            "path": "C7/Content/Arts/UI_2/Resource/Font/Aleo_Title.ufont",
+            "chunk_id": "856051bacfd170ace23dfd07",
+            "crc32": "f38143d7",
+            "offset": 222527,
+            "compressed_size": 273076
+          },
+          {
+            "path": "C7/Content/Arts/UI_2/Resource/Font/Aleo_Title_SDF.ufont",
+            "chunk_id": "d303f1fe2d57c00fed128f07",
+            "crc32": "f38143d7",
+            "offset": 495656,
+            "compressed_size": 273076
+          },
+          {
+            "path": "C7/Content/Arts/UI_2/Resource/Font/Aleo_Title_SDF_HeadName.ufont",
+            "chunk_id": "96512b544571f4ef7a336307",
+            "crc32": "f38143d7",
+            "offset": 768785,
+            "compressed_size": 273076
+          },
+          {
+            "path": "C7/Content/Arts/UI_Update/Resource/Font/Aleo_Regular_Update.ufont",
+            "chunk_id": "9ed052ebda01d8d978c72707",
+            "crc32": "66b04c10",
+            "offset": 1041914,
+            "compressed_size": 111184
+          },
+          {
+            "path": "C7/Content/Arts/UI_Update/Resource/Font/Aleo_Title_Update.ufont",
+            "chunk_id": "40956df6167fc247a925e107",
+            "crc32": "f38143d7",
+            "offset": 1153151,
+            "compressed_size": 273076
+          }
+        ]
+      }
+    }
+  }
+}
