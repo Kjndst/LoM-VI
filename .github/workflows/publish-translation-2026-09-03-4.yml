@@ -1,0 +1,116 @@
+name: Publish LoM-VI translation 2026.09.03.4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-translation-2026-09-03-4.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build terminology update
+        shell: bash
+        run: |
+          set -euo pipefail
+          OLD="$GITHUB_WORKSPACE/channel/translation-2026.09.03.3.zip"
+          WORK=/tmp/lomvi-translation-2026.09.03.4
+          OUT="$GITHUB_WORKSPACE/channel/translation-2026.09.03.4.zip"
+          rm -rf "$WORK"
+          mkdir -p "$WORK"
+          unzip -q "$OLD" -d "$WORK"
+          python3 - "$WORK" <<'PY'
+          import pathlib, sys
+          root = pathlib.Path(sys.argv[1])
+          replacements = [
+              ('Cảnh Giới Quỷ Bí', 'Bí Cảnh'),
+              ('Thế Thân Người Giấy', 'Thế Thân'),
+              ('Ngu Lộng Vận Mệnh', 'Số Mệnh'),
+              ('Dealer', 'Thần Bài'),
+          ]
+          counts = {old: 0 for old, _ in replacements}
+          for path in sorted(p for p in root.rglob('*') if p.is_file()):
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              original = text
+              for old, new in replacements:
+                  n = text.count(old)
+                  if n:
+                      counts[old] += n
+                      text = text.replace(old, new)
+              if text != original:
+                  path.write_text(text, encoding='utf-8', newline='')
+          print('replacement_counts=', counts)
+          # The Fate/Dealer decisions are new in this release and must exist in
+          # the previous payload. The other two may already have been folded by
+          # an earlier owner-approved delta, so they are allowed to be zero.
+          if counts['Ngu Lộng Vận Mệnh'] == 0:
+              raise SystemExit('expected Ngu Lộng Vận Mệnh in previous payload')
+          if counts['Dealer'] == 0:
+              raise SystemExit('expected Dealer in previous payload')
+          PY
+          python3 - "$WORK" "$OUT" <<'PY'
+          import os, sys, zipfile
+          root, out = sys.argv[1:]
+          files=[]
+          for dp, dns, fns in os.walk(root):
+              dns.sort(); fns.sort()
+              for fn in fns:
+                  p=os.path.join(dp,fn)
+                  files.append((os.path.relpath(p,root).replace(os.sep,'/'),p))
+          with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for rel,p in sorted(files):
+                  info=zipfile.ZipInfo(rel,(2026,1,1,0,0,0))
+                  info.compress_type=zipfile.ZIP_DEFLATED
+                  info.create_system=3
+                  info.external_attr=(0o100644 << 16)
+                  with open(p,'rb') as f:
+                      z.writestr(info,f.read(),compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
+          PY
+          unzip -t "$OUT"
+          python3 - "$GITHUB_WORKSPACE/channel/manifest.json" "$OUT" <<'PY'
+          import hashlib,json,os,sys
+          manifest_path,out=sys.argv[1:]
+          data=open(out,'rb').read()
+          sha=hashlib.sha256(data).hexdigest()
+          size=len(data)
+          manifest=json.load(open(manifest_path,encoding='utf-8'))
+          tr=manifest['components']['translation']
+          tr['version']='2026.09.03.4'
+          tr['url']='https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip'
+          tr['sha256']=sha
+          tr['size']=size
+          tr['notes']='Terminology refresh: Bí Cảnh, Thế Thân, Thần Bài, Số Mệnh; otherwise identical translation/runtime coverage to 2026.09.03.3.'
+          with open(manifest_path,'w',encoding='utf-8',newline='\n') as f:
+              json.dump(manifest,f,ensure_ascii=False,indent=2); f.write('\n')
+          sums_path=os.path.join(os.path.dirname(manifest_path),'SHA256SUMS.txt')
+          rows=[]
+          if os.path.exists(sums_path):
+              rows=open(sums_path,encoding='utf-8').read().splitlines()
+          rows=[r for r in rows if 'translation-2026.09.03.' not in r]
+          rows.append(f'{sha}  translation-2026.09.03.4.zip')
+          open(sums_path,'w',encoding='utf-8',newline='\n').write('\n'.join(rows)+'\n')
+          print('TRANSLATION_SIZE=',size)
+          print('TRANSLATION_SHA256=',sha)
+          PY
+
+      - name: Publish and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .github/workflows/publish-translation-2026-09-03-4.yml
+          git add channel/translation-2026.09.03.4.zip channel/manifest.json channel/SHA256SUMS.txt .github/workflows/publish-translation-2026-09-03-4.yml
+          git commit -m 'channel: publish translation 2026.09.03.4'
+          git push origin HEAD:main
