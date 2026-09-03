@@ -1,0 +1,84 @@
+name: EXP build UnrealReZen pinned
+
+on:
+  push:
+    branches:
+      - exp/community-iostore-font-route
+    paths:
+      - .github/workflows/exp-build-unrealrezen.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout experiment branch
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Clone pinned UnrealReZen
+        shell: pwsh
+        run: |
+          git clone --recursive https://github.com/rm-NoobInCoding/UnrealReZen.git external/UnrealReZen
+          Set-Location external/UnrealReZen
+          git checkout bf9e8de4abb63b80267f3895bbb83e8b86f53df5
+          git submodule update --init --recursive
+          Write-Host "UnrealReZen=$(git rev-parse HEAD)"
+          Write-Host "CUE4Parse=$(git -C external/CUE4Parse rev-parse HEAD)"
+
+      - name: Publish self-contained win-x64
+        shell: pwsh
+        run: |
+          dotnet publish external/UnrealReZen/UnrealReZen/UnrealReZen.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:PublishTrimmed=false `
+            -o out/UnrealReZen
+
+      - name: Prime native compression DLLs
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tmp = Join-Path $env:TEMP 'oodleue.zip'
+          Invoke-WebRequest -Uri 'https://github.com/WorkingRobot/OodleUE/releases/download/2026-01-25-1223/clang-cl-x64-release.zip' -OutFile $tmp
+          Expand-Archive -LiteralPath $tmp -DestinationPath (Join-Path $env:TEMP 'oodleue') -Force
+          Copy-Item (Join-Path $env:TEMP 'oodleue/bin/oodle-data-shared.dll') 'out/UnrealReZen/oodle-data-shared.dll' -Force
+
+          $gz = Join-Path $env:TEMP 'zlib-ng2.dll.gz'
+          Invoke-WebRequest -Uri 'https://github.com/NotOfficer/Zlib-ng.NET/releases/download/1.0.0/zlib-ng2.dll.gz' -OutFile $gz
+          $inStream = [IO.File]::OpenRead($gz)
+          try {
+            $gzip = [IO.Compression.GZipStream]::new($inStream, [IO.Compression.CompressionMode]::Decompress)
+            try {
+              $outStream = [IO.File]::Create((Join-Path $PWD 'out/UnrealReZen/zlib-ng2.dll'))
+              try { $gzip.CopyTo($outStream) } finally { $outStream.Dispose() }
+            } finally { $gzip.Dispose() }
+          } finally { $inStream.Dispose() }
+
+      - name: Record authority
+        shell: pwsh
+        run: |
+          @'
+          UnrealReZen=bf9e8de4abb63b80267f3895bbb83e8b86f53df5
+          CUE4Parse=9539d4d86aef568f27957796249891d125d2c223
+          Purpose=LoM-VI read-only/community IoStore route experiment
+          '@ | Set-Content out/UnrealReZen/AUTHORITY.txt -Encoding UTF8
+          Get-FileHash out/UnrealReZen/UnrealReZen.exe -Algorithm SHA256 | Format-List
+          Get-ChildItem out/UnrealReZen | Select-Object Name,Length
+
+      - name: Upload pinned tool
+        uses: actions/upload-artifact@v4
+        with:
+          name: lomvi-unrealrezen-pinned-win64
+          path: out/UnrealReZen/*
+          if-no-files-found: error
+          retention-days: 1
