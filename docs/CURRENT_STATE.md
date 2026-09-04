@@ -1,7 +1,7 @@
 # LoM-VI — Current State / Continuity Authority
 
 **Status:** ACTIVE LIVING AUTHORITY  
-**Last reconciled:** 2026-09-04 (+07), after FULL-BOLD r10 live result  
+**Last reconciled:** 2026-09-04 (+07), after FULL-BOLD r13 live result  
 **Repository:** `Kjndst/LoM-VI`
 
 > Read this file before continuing development. New clean live evidence overrides older handoffs/speculation. After every decisive live result, update this file before starting the next major Font gate.
@@ -21,7 +21,7 @@ Translation goals remain:
 
 Font must remain independent from Translation/Core release cadence.
 
-Current stable channel is still unchanged:
+Current stable channel remains unchanged:
 
 - Core `0.2.0.4`
 - Translation `2026.09.03.4`
@@ -31,7 +31,7 @@ Current stable channel is still unchanged:
 
 ---
 
-## 2. Production Font direction — provisional but now strongly supported
+## 2. Production Font direction — now mechanically supported
 
 Owner design target:
 
@@ -41,9 +41,11 @@ Owner design target:
 - both faces should contain **native full Vietnamese** so `ấ / ế / ạ / ộ / ữ ...` do not fall back to a different typeface;
 - CJK coverage only needs to cover still-untranslated / required game surfaces rather than the entire Unicode CJK universe if glyph budget is constrained.
 
-Current evidence suggests production should preserve the glyph structure/glyph-ID envelope already accepted by the game and **reuse/replace existing glyph slots**, rather than append large numbers of new physical glyph IDs.
+The current mechanically supported architecture is:
 
-This architecture is not yet production-PASS; r11 is the direct mechanical proof gate for it.
+> **Preserve the original accepted TrueType glyph-ID envelope/order and reuse existing glyph slots in-place. Do not append large numbers of new physical glyph IDs.**
+
+r11/r12/r13 provide positive live evidence for this direction.
 
 ---
 
@@ -120,9 +122,7 @@ Preserve clone filename, seven asset paths, fixed physical slots, encoded-entry 
 
 ### r1 — full Noto CJK Bold
 
-Installer failed closed before runtime mutation because `Aleo_Regular_Update` compressed data exceeded its fixed physical slot.
-
-Build constraint only; no runtime conclusion.
+Installer failed closed before runtime mutation because `Aleo_Regular_Update` compressed data exceeded its fixed physical slot. Build constraint only.
 
 ### r2 — compact Black TrueType positive control
 
@@ -137,23 +137,17 @@ Live:
 
 ### r3 — CJK+VI CFF/OTF
 
-All text disappeared, including version digits.
-
-**CFF/OTF is not the current viable direction.**
+All text disappeared, including version digits. **CFF/OTF is not the viable direction.**
 
 ### r4 — TTF/glyf CJK+VI canary
 
-Version digits returned and some replacement/special characters appeared.
-
-**TTF/glyf is the viable direction.**
+Version digits returned and some replacement/special characters appeared. **TTF/glyf is viable.**
 
 ### r5 / r6 / r7 — large/alias/unique-glyph probes
 
 - r5: very large CJK cmap mapped to one `W` → visible glyphs disappeared, layout remained.
 - r6: reduced GB2312 cmap still mapped to one `W` → same invisible-layout state.
 - r7: unique physical glyph IDs at high complexity → still invisible-layout state.
-
-These eliminated simple “one glyph aliasing” as the main cause and showed the failure is not explained solely by r5's huge cmap.
 
 ### r8 — CMAP4095 — **BROAD POSITIVE PASS**
 
@@ -163,144 +157,162 @@ Construction:
 - `3316` physical glyphs;
 - exactly `4095` Unicode mappings;
 - original r2 `2840` mappings unchanged;
-- exact `1255` extra codepoints mapped to the existing proven `W` glyph.
+- `1255` extra codepoints mapped to existing proven `W` glyph.
 
 Live:
 
 - version digits rendered;
-- many deliberate `W` glyphs visibly rendered at CJK/text positions, including next to version digits.
+- many deliberate `W` glyphs rendered at CJK/text positions.
 
-r8 proves:
+r8 proves route/container/TrueType raster path works, CJK-range codepoints flow through cmap, and mapping new codepoints to an **existing accepted glyph ID** works.
 
-1. route/container/TrueType raster path works;
-2. CJK-range codepoints flow through cmap;
-3. mapping a new codepoint to an **existing accepted glyph ID** works;
-4. `4095` is a live-proven safe control point under this construction.
+### r9 — real CJK glyph append — **FAIL / ISOLATION**
 
-Do not claim 4095 is a universal mathematical maximum.
-
-### r9 — real CJK glyph append — **PARTIAL FAIL / IMPORTANT ISOLATION**
-
-Same exact `4095` mapping set as r8, but the `1255` CJK codepoints received newly appended real Noto CJK glyphs.
-
-- total glyphs `4571`;
-- Font SHA-256 `624fa0c0e5c7728d4ad6c0691e749cdb868ad5b1b8c005ef2d4eb9c897c619a8`;
-- EXE SHA-256 `f5763867b0ae6edf11e277c4018f6524589859e400de1bb3f8507c21b88ba1da`.
+Same 4095 mapping set as r8, but 1255 CJK codepoints received newly appended real Noto CJK glyphs.
 
 Live:
 
-- version digits still rendered;
+- version digits rendered;
 - new real CJK glyphs did not render.
 
-Therefore route and mapping budget remained alive; failure moved to new physical glyph construction/identity/table integration.
+### r10 — simple newly appended rectangle glyphs — **FAIL / DECISIVE**
 
-### r10 — simple newly appended rectangle glyphs — **FAIL / DECISIVE ISOLATION**
+Same appended glyph IDs as r9 but every new glyph was replaced by a trivial rectangle.
+
+Live:
+
+- version digits rendered;
+- no appended rectangle glyphs rendered.
+
+Therefore outline complexity is not the cause. Newly appended physical glyph IDs/table integration are the blocker.
+
+### r11 — rewrite one original accepted glyph — **POSITIVE PASS**
 
 Construction:
 
-- same `4095` mappings as r9;
-- same `4571` physical glyph count;
-- same `1255` newly appended glyph IDs;
-- every added CJK glyph replaced by an extremely simple TrueType rectangle;
-- no Noto outline complexity remained.
-
-Candidate:
-
-`LoM-VI-Full-Bold-Visual-Takeover-Control-r10-SIMPLE-CJK-GLYPHS.exe`
-
-- Font SHA-256 `34265a6b0b27982d947f79bff845b3ecd1691b98779e3902ed248815996681d3`
-- EXE SHA-256 `bac01e0286aece48bb8ecfce28739e2969150cb9a1ba559fd5b1095d97f895ce`
+- exact r8-style accepted shape;
+- `3316` physical glyphs;
+- `4095` mappings;
+- no new glyph IDs;
+- existing `W` GID 58 rewritten in-place into a large solid block;
+- CJK mappings still targeted that original GID.
 
 Owner live result:
 
-- installer completed;
-- loading version digits rendered normally/heavily;
-- **no new rectangle glyphs rendered**;
-- main/title UI still lacked those text glyphs.
+- version digits rendered;
+- solid blocks rendered at multiple former CJK positions;
+- not every text position was covered.
 
 Interpretation:
 
-> **Outline complexity is eliminated as the cause. Newly appended physical glyph IDs/table integration are the current blocker.**
+> **In-place rewrite of an original accepted glyph ID works. The production architecture is mechanically valid; remaining absence is coverage, not route failure.**
 
-Strongest comparison:
+### r12 — multi-original-glyph bank — **POSITIVE PASS**
 
-- r8: same CJK codepoints → existing GID `W` → render;
-- r9/r10: same codepoints → newly appended GIDs → invisible;
-- even trivial rectangle outlines do not rescue appended GIDs.
+Construction:
 
-Do not spend the next gate debugging Noto conversion or route/Oodle.
+- no appended glyph IDs;
+- `3316` physical glyphs;
+- `4095` mappings;
+- eight existing glyphs `W/M/N/H/X/Y/Z/Q` rewritten to visibly distinct marker shapes;
+- 1255 extra codepoints distributed across those eight original GIDs.
+
+Owner live result:
+
+- loading rendered multiple distinct marker shapes/letters, not only one block;
+- main/in-game still lacked most text.
+
+Interpretation:
+
+> **Multiple original accepted glyph IDs can be rewritten and independently reused.**
+
+Main/in-game absence is still primarily a coverage problem under this diagnostic subset.
+
+### r13 — multi-original-glyph bank, 5119 mappings — **POSITIVE PASS**
+
+Construction:
+
+- same original-GID reuse model as r12;
+- no new glyph IDs;
+- still `3316` physical glyphs;
+- mapping coverage increased from `4095` to exactly **`5119`**;
+- eight rewritten original marker GIDs retained.
+
+Owner live result:
+
+- loading still rendered multiple marker shapes plus normal version digits;
+- marker pattern changed / coverage increased slightly;
+- title/main text still mostly absent.
+
+Interpretation:
+
+> **5119 mappings is also live-proven viable under original-GID reuse.**
+
+Do not claim 5119 is a universal maximum. The next useful gate is no longer “more marker coverage”; it is **real glyph replacement inside a larger original-slot bank**.
 
 ---
 
 ## 6. Current live machine state
 
-At this update, owner has just live-tested **r10** successfully enough to observe its result.
+At this update, owner has just live-tested **r13**.
 
 Treat:
 
-> **r10 as currently installed unless owner reports a rollback/recovery after this point.**
+> **r13 as currently installed unless owner reports rollback/recovery after this point.**
 
-Before r11:
+Before r14:
 
 1. close game;
-2. run r10 a second time and require exact rollback success;
-3. if rollback refuses/hash-mismatches, stop and use official GMZZLauncher Verify/Repair instead;
+2. run r13 a second time and require exact rollback success;
+3. if rollback refuses/hash-mismatches, use official GMZZLauncher Verify/Repair instead;
 4. confirm clean stock/full-Chinese small/legal/version text once;
-5. only then install r11 once.
+5. only then install r14 once.
 
-Do not reinstall the stable Việt hóa pack during this mechanical gate.
-
-The separate stable pack uninstall/remove failure observed after r9 remains a patcher bug, not part of r11 Font mechanics.
+Do not install the stable Việt hóa pack during this mechanical gate.
 
 ---
 
-## 7. r11 — REUSE / REWRITE ORIGINAL GLYPH — built, not live-tested
+## 7. r14 — REAL-VIETNAMESE ORIGINAL-SLOT BANK — built, not live-tested
 
 Purpose:
 
-> Prove that the game accepts a **modified outline inside an already-existing, already-proven glyph ID**, without adding any new physical glyph IDs.
+> Prove that a **large bank of existing accepted glyph IDs** can be rewritten with **real Latin/Vietnamese outlines**, not only simple marker blocks, while preserving the accepted glyph count/order.
 
-Construction is intentionally a direct r8 derivative:
+Construction:
 
-- base = exact r8 known-good font shape;
+- base route/container = r13;
 - physical glyph count remains exactly **3316**;
-- Unicode mapping count remains exactly **4095**;
-- no new glyph IDs appended;
-- existing glyph ID `W` remains GID **58**;
-- all r8 CJK codepoints that targeted `W` still target that same existing GID;
-- only the existing `W` outline is rewritten into one unmistakable large solid rectangle/block;
-- W metrics remain `(advance 1015, LSB 22)`;
-- rewritten W bbox `(90,60) → (925,780)`;
-- route, captured dev.24 `inner.cache`, seven Aleo assets, Oodle path, fixed PAK topology remain unchanged.
-
-r11 Font:
-
-- raw size `530,464` bytes;
-- SHA-256 `e4d49565b71ea1741457bf6ccde369d94b39f2b78b9596e78c0022c87e77d261`;
-- padded embedded-slot SHA-256 `3e91d5b3b915acea60eb4c8f3f8313613197a442e088c4d98e8ab3247eb6bf99`.
-
-Candidate EXE:
-
-`LoM-VI-Full-Bold-Visual-Takeover-Control-r11-REUSE-ORIGINAL-GLYPH.exe`
-
-EXE SHA-256:
-
-`fd3233efc37d8dbb02a9a487b1d9c6135cb4acc288a2fcc388f41dcb3f0ef01e`
+- Unicode mapping count remains exactly **5119**;
+- no new physical glyph IDs appended;
+- 64 existing original glyph slots are reused: `A-Z`, `a-z`, plus 12 punctuation slots (`[]{}<>@#$%&*`);
+- those 64 slots are rewritten with 64 real Latin/Vietnamese glyph outlines taken from the already-proven TTF base;
+- source outline bank includes native Vietnamese shapes such as `Ă Â Đ Ê Ô Ơ Ư`, `á à ả ã ạ`, `ấ ầ ẩ ẫ ậ`, `ế ề ể ễ ệ`, `ố ồ ổ ỗ ộ`, `ớ ờ ở ỡ ợ`, `ứ ừ ử ữ ự`, `ý ỳ ỷ ỹ ỵ`;
+- composite source glyphs are decomposed/flattened into simple TrueType outlines before insertion;
+- the same r13 2279 extra codepoints are distributed across the 64 reused original GIDs;
+- version digits and period are not used as rewrite slots, so loading version remains a stable control.
 
 Static validation:
 
 - `numGlyphs = 3316`;
-- `cmap mappings = 4095`;
-- `W GID = 58`;
-- 789 CJK Unified Ideograph codepoints in the current r8 set still map to `W`;
-- no new glyph identity exists;
-- executable self-check contains the exact new padded-slot SHA once.
+- best Unicode cmap = `5119` unique mappings;
+- raw TTF size `535,168` bytes;
+- raw TTF SHA-256 `a52191ed53d791b175aff32fe8014c9836b5af9781e752b9e310f97299ab9cd8`;
+- padded embedded-slot SHA-256 `de13891f82c2db13f9c7609510bbc543478287c882012f15767dd1e64c806d4c`;
+- `欢迎回来`, `切换账号`, `游戏`, `设置`, `版本`, `服务器`, `登录`, `进入`, `开始`, `战斗`, `技能`, `装备`, `地图` all map into the 64 reused original slots.
 
-### r11 decision table
+Candidate EXE:
 
-- **Version digits render + CJK positions become large solid blocks** → in-place rewrite of an original accepted glyph works. This is the required positive proof for the production strategy: preserve glyph-ID budget/order and repurpose existing slots for full Vietnamese + required CJK. Next gate should use multiple existing original glyph slots with distinct real Vietnamese/CJK outlines, then split Title vs UI/Body faces.
-- **Version digits render but CJK positions are invisible** → even modifying an existing glyph outline is being rejected in this construction; compare r8↔r11 font-table changes around the rewritten original glyph while keeping route closed as solved.
-- **Version digits disappear too** → stronger font rejection; inspect r8↔r11 structural delta only.
+`LoM-VI-Full-Bold-Visual-Takeover-Control-r14-REAL-VIETNAMESE-ORIGINAL-SLOTS.exe`
+
+EXE SHA-256:
+
+`1da79f57858384a11ffff01054120bac67ba6ec6aa7e155ca2fdfee7dadda812`
+
+### r14 decision table
+
+- **Version digits render + former CJK positions now show recognizable Latin/Vietnamese letters/diacritics** → mass rewrite of original accepted slots with real glyph outlines is proven. Font mechanics are sufficiently solved to begin the production split into Title + UI/Body and native full-Vietnamese mapping.
+- **Version digits render but only some rewritten slots show / many remain invisible** → identify which original GIDs are accepted across surfaces; build a production-safe slot whitelist rather than reopening route/Oodle.
+- **Version digits disappear** → stronger structural rejection from the 64-slot rewrite; compare r13↔r14 font table deltas only.
 
 ---
 
@@ -308,9 +320,9 @@ Static validation:
 
 After r9, installing the current Việt hóa pack produced stock-looking/full Chinese and its remove/uninstall action did not work.
 
-This remains recorded separately. Do not infer that stable manifest directly manages `inner.cache`; current stable manifest declares managed roots under `Saved/Mods/...` and the stable VN Font PAK only.
+This remains a separate patcher/uninstaller bug. Do not infer that stable manifest directly manages `inner.cache`; current stable manifest declares managed roots under `Saved/Mods/...` and the stable VN Font PAK only.
 
-Do not broaden Font mechanics into patcher repair unless owner explicitly changes priority.
+Do not broaden Font mechanics into patcher repair unless owner changes priority.
 
 ---
 
@@ -323,13 +335,14 @@ Do not broaden Font mechanics into patcher repair unless owner explicitly change
 - Official Oodle 2.9.10 is not inherently incompatible.
 - Missing text alone is not positive proof.
 - **Alternate-font proof exists via r2 and especially r8.**
-- TTF/glyf is the viable direction; CFF/OTF is not.
+- TTF/glyf is viable; CFF/OTF is not.
 - CJK codepoint/cmap flow is positively proven by r8.
-- Many-codepoints→one-glyph aliasing is not the primary blocker.
-- r9 shows newly appended real glyphs fail while the same mappings to existing GID work.
-- r10 shows even trivial newly appended rectangle glyphs fail; Noto outline complexity is not the cause.
-- The smallest current hypothesis is **append-GID/table integration failure**.
-- Do not modify stable channel while Font work remains experimental.
+- r9/r10 prove newly appended physical glyph IDs can remain invisible even with trivial outlines.
+- r11 proves modifying an existing accepted GID outline in-place works.
+- r12 proves multiple existing original GIDs can be independently reused.
+- r13 proves `5119` mappings remains viable under original-GID reuse.
+- Current production direction is **original-slot reuse + native Vietnamese**, not append-GID expansion.
+- Stable channel must remain unchanged during experiments.
 
 ---
 
@@ -351,4 +364,4 @@ Do not delete arbitrary caches by guesswork.
 
 Begin with:
 
-> Read `docs/CURRENT_STATE.md` as authority. Reconcile `main` and stable manifest. Treat r8 as broad positive alternate-font/cmap proof and r10 as decisive evidence that newly appended physical glyph IDs remain invisible even with trivial outlines. Do not reopen route/Oodle or Noto-outline diagnostics. Current live state is r10 installed unless newer owner evidence says otherwise. The smallest unfinished gate is r11 REUSE/REWRITE ORIGINAL GLYPH: rollback r10 cleanly, install r11 once, and report whether former CJK positions become solid blocks while version digits remain visible. Stable channel must remain unchanged.
+> Read `docs/CURRENT_STATE.md` as authority. Reconcile `main` and stable manifest. Treat r11/r12 as positive proof that original accepted glyph IDs can be rewritten/reused, and r13 as proof that 5119 mappings still render under that model. Do not reopen route/Oodle, CFF, or append-GID diagnostics. Current live state is r13 installed unless newer owner evidence says otherwise. The smallest unfinished gate is r14 REAL-VIETNAMESE ORIGINAL-SLOT BANK: rollback r13 cleanly, install r14 once, and report whether recognizable Vietnamese/Latin glyph shapes render at former CJK positions while version digits remain visible. Stable channel must remain unchanged.
