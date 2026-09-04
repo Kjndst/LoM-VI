@@ -1,0 +1,32 @@
+name: Temporary Spectral donor fetch
+
+on:
+  push:
+    branches:
+      - build/font-full-v2-20260905
+    paths:
+      - '.github/workflows/tmp-fetch-spectral-font.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Spectral SemiBold donor
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/out
+          curl --fail --location --retry 3 \
+            'https://raw.githubusercontent.com/google/fonts/main/ofl/spectral/Spectral-SemiBold.ttf' \
+            -o /tmp/out/Spectral-SemiBold.ttf
+          test "$(stat -c '%s' /tmp/out/Spectral-SemiBold.ttf)" -gt 200000
+          sha256sum /tmp/out/Spectral-SemiBold.ttf | tee /tmp/out/SHA256.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spectral-semibold-maintainer-donor
+          path: /tmp/out
+          if-no-files-found: error
