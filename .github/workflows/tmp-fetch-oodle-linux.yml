@@ -22,13 +22,14 @@ jobs:
           curl -fL --retry 3 --retry-delay 2 "$url" -o liboo2corelinux64.so.9
           test "$(stat -c%s liboo2corelinux64.so.9)" = '688096'
           sha256sum liboo2corelinux64.so.9
-      - name: Fetch official IBM Plex Sans Condensed donor
+      - name: Fetch pinned IBM Plex Sans Condensed donor
         shell: bash
         run: |
           set -euo pipefail
-          url='https://github.com/IBM/plex/releases/download/%40ibm/plex-sans-condensed%402.0.0/ibm-plex-sans-condensed.zip'
+          url='https://github.com/IBM/plex/releases/download/%40ibm/plex-sans-condensed%401.1.0/ibm-plex-sans-condensed.zip'
           curl -fL --retry 3 --retry-delay 2 "$url" -o ibm-plex-sans-condensed.zip
-          echo 'f86ba73abbeed7cf7690ead863192a87211dfc2b0cef0ac6bf4700533ec5ab9e  ibm-plex-sans-condensed.zip' | sha256sum -c -
+          test "$(stat -c%s ibm-plex-sans-condensed.zip)" = '5823577'
+          sha256sum ibm-plex-sans-condensed.zip
           mkdir -p plex
           unzip -q ibm-plex-sans-condensed.zip -d plex
           donor="$(find plex -type f -iname 'IBMPlexSansCondensed-Medium.ttf' -print -quit)"
