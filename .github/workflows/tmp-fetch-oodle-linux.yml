@@ -1,0 +1,31 @@
+name: tmp-fetch-oodle-linux
+
+on:
+  push:
+    branches:
+      - build/font-body-oodle
+    paths:
+      - '.github/workflows/tmp-fetch-oodle-linux.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch exact Oodle Linux runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://raw.githubusercontent.com/Fortniteleakjp/oo2core_9_Linux/main/liboo2corelinux64.so.9'
+          curl -fL --retry 3 --retry-delay 2 "$url" -o liboo2corelinux64.so.9
+          test "$(stat -c%s liboo2corelinux64.so.9)" = '688096'
+          sha256sum liboo2corelinux64.so.9
+      - name: Upload runtime artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: oodle-linux-9
+          path: liboo2corelinux64.so.9
+          if-no-files-found: error
+          retention-days: 1
