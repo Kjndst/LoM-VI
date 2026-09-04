@@ -13,43 +13,89 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Recon current stable translation and core
+      - name: Inspect latest English patch v2.3.0 terminology
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/lomvi-qc/pkg /tmp/lomvi-qc/core /tmp/lomvi-qc/report
-          curl -fL --retry 3 https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip -o /tmp/lomvi-qc/translation.zip
-          echo '33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70  /tmp/lomvi-qc/translation.zip' | sha256sum -c -
-          unzip -q /tmp/lomvi-qc/translation.zip -d /tmp/lomvi-qc/pkg
-          curl -fL --retry 3 https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip -o /tmp/lomvi-qc/core.zip
-          echo '417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e  /tmp/lomvi-qc/core.zip' | sha256sum -c -
-          unzip -q /tmp/lomvi-qc/core.zip -d /tmp/lomvi-qc/core
-          cp -a /tmp/lomvi-qc/pkg /tmp/lomvi-qc/report/extracted
-          cp -a /tmp/lomvi-qc/core /tmp/lomvi-qc/report/core-extracted
-          find /tmp/lomvi-qc/pkg -type f -printf '%P\t%s\n' | sort > /tmp/lomvi-qc/report/file-list.txt
+          ROOT=/tmp/lomvi-en
+          mkdir -p "$ROOT/pkg" "$ROOT/report"
+          curl -fL --retry 3 'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.3.0/lom-english-patch-data.zip' -o "$ROOT/english.zip"
+          echo '25001d06c2fab6bb0dc0195cf1d733d1670c7c1bac363438cc36a33573d6dbac  /tmp/lomvi-en/english.zip' | sha256sum -c -
+          unzip -q "$ROOT/english.zip" -d "$ROOT/pkg"
+          find "$ROOT/pkg" -type f -printf '%P\t%s\n' | sort > "$ROOT/report/file-list.txt"
           python3 - <<'PY'
           from pathlib import Path
-          root=Path('/tmp/lomvi-qc/pkg')
-          targets='正在校验资源文件|登录账号|服务器选择|熔断说明|可前往灵界召唤获取|新手|赛季剧情|躺赢|战略服|以战养战|竞逐|征伐|势力|大帝的归来|终末猎杀|神座之争|主宰争锋|命运时刻|众神之巅|四方联赛|俱乐部宣战|玩法入口|段位任务|每日8点刷新|每周一8点刷新|轻松躺赢|每周旅程|段位天梯|自动取段位天梯胜点最高|已有角色|推荐|诡秘世界|以神之名|征服者|永恒烈阳|黑皇帝|命运道标|空想家|塔罗会|愚者|福生玄黄|魔女|死神|白银城|霍纳奇斯|混沌海|廷根|黑荆棘|神弃之地|灰雾之上|源堡|贝克兰德|深渊|推荐方案|我的方案|我要变强|木桩训练|一键辅助|筛选技能|自身|以光为证|身前半径4米的圆形区域|烈阳：身前半径5.6米的圆形区域|半径为8米的圆形|技能等级同时提升|序列晋升|血内阴影的伤害增加10%|家族|艺术学院'.split('|')
+          root=Path('/tmp/lomvi-en/pkg')
+          terms='''神弃之地
+灰雾之上
+终末猎杀
+主宰争锋
+神座之争
+命运时刻
+众神之巅
+四方联赛
+猎城战
+高原战
+高原竞逐
+世界冒险
+封印物
+梦魇冲击
+戏法表演
+我只是一条狗
+子爵一阶
+子爵二阶
+子爵三阶
+子爵四阶
+子爵五阶
+伯爵一阶
+侯爵一阶
+公爵一阶
+亲王
+骑士一阶
+男爵一阶
+段位
+段位天梯
+凯旋徽章
+大帝的归来
+战略服
+以战养战
+玩法入口
+段位任务
+野外500人混战
+6对6组队赛事
+四方240人战场
+俱乐部1v1对决
+身前半径4米的圆形区域
+烈阳：身前半径5.6米的圆形区域
+半径为8米的圆形
+所有人脉技能等级同时提升
+血肉阴影的伤害增加10%'''.splitlines()
           files=[]
           for p in root.rglob('*'):
-              if p.is_file():
-                  try: txt=p.read_text(encoding='utf-8')
-                  except Exception: continue
-                  files.append((p,txt))
+              if not p.is_file(): continue
+              try: txt=p.read_text('utf-8')
+              except Exception: continue
+              files.append((p,txt))
           out=[]
-          for t in targets:
-              out.append(f'===== {t} =====')
-              hits=[]
+          for term in terms:
+              out.append(f'===== {term} =====')
+              count=0
               for p,txt in files:
-                  for i,line in enumerate(txt.splitlines(),1):
-                      if t in line: hits.append(f'{p.relative_to(root)}:{i}: {line}')
-              out.extend(hits or ['(NO_HIT)'])
-          Path('/tmp/lomvi-qc/report/target-hits.txt').write_text('\n'.join(out),encoding='utf-8')
+                  lines=txt.splitlines()
+                  for i,line in enumerate(lines):
+                      if term in line:
+                          lo=max(0,i-2); hi=min(len(lines),i+3)
+                          out.append(f'--- {p.relative_to(root)}:{i+1} ---')
+                          out.extend(f'{j+1}: {lines[j]}' for j in range(lo,hi))
+                          count+=1
+                          if count>=20: break
+                  if count>=20: break
+              if count==0: out.append('(NO_HIT)')
+          Path('/tmp/lomvi-en/report/english-target-context.txt').write_text('\n'.join(out),encoding='utf-8')
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: translation-qc-recon-20260905
-          path: /tmp/lomvi-qc/report
+          name: english-v230-terminology-recon
+          path: /tmp/lomvi-en/report
           retention-days: 1
           if-no-files-found: error
