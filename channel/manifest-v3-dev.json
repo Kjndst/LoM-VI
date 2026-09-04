@@ -5,6 +5,13 @@
   "patcher": {
     "minimum_version": "0.3.0-dev.3"
   },
+  "core": {
+    "version": "0.2.0.4",
+    "available": true,
+    "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip",
+    "sha256": "417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e",
+    "archive_root": "game"
+  },
   "translation": {
     "version": "2026.09.03.4",
     "available": true,
