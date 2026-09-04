@@ -1,0 +1,60 @@
+name: Temporary English v2.3.0 name recon
+
+on:
+  push:
+    branches: [dev11-native-bootstrap-integration]
+    paths: ['.github/workflows/tmp-en-v230-next-names.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  recon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract exact English v2.3.0 mappings
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/en230"
+          mkdir -p "$ROOT/pkg" "$ROOT/report"
+          curl -fL --retry 3 'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.3.0/lom-english-patch-data.zip' -o "$ROOT/english.zip"
+          echo '25001d06c2fab6bb0dc0195cf1d733d1670c7c1bac363438cc36a33573d6dbac  '"$ROOT/english.zip" | sha256sum -c -
+          unzip -q "$ROOT/english.zip" -d "$ROOT/pkg"
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('/tmp')
+          import os
+          pkg=Path(os.environ['RUNNER_TEMP'])/'en230'/'pkg'
+          outp=Path(os.environ['RUNNER_TEMP'])/'en230'/'report'/'next-name-context.txt'
+          terms=['英雄登场','廷根老司机','秘术斗篷','巨人体魄','禁锢秘偶','真理裂隙','星沙突击','余震冲击','洞察之眼','知识漩涡','勇气之歌','圣光共鸣','偷盗者变形术','病痛缠身','风暴追击','圣光垂慕','道德刺剑','潜意识海洋','梦境复苏','梦境重生','鱼人袖钉','生命手杖','阴影斗篷','剧毒之刃','黄昏面具','莉莉丝指环','水晶之眼','厄运布偶','腐烂的流星','大地的恩赐','正义钱包','安提哥努斯笔记','苍白的死亡','许愿神灯','月亮纸人']
+          files=[]
+          for p in pkg.rglob('*'):
+              if not p.is_file(): continue
+              try: txt=p.read_text('utf-8')
+              except Exception: continue
+              files.append((p,txt))
+          out=[]
+          for term in terms:
+              out.append(f'===== {term} =====')
+              hits=0
+              for p,txt in files:
+                  ls=txt.splitlines()
+                  for i,line in enumerate(ls):
+                      if term in line:
+                          lo=max(0,i-1); hi=min(len(ls),i+2)
+                          out.append(f'--- {p.relative_to(pkg)}:{i+1} ---')
+                          out.extend(f'{j+1}: {ls[j]}' for j in range(lo,hi))
+                          hits+=1
+                          if hits>=12: break
+                  if hits>=12: break
+              if not hits: out.append('(NO_HIT)')
+          outp.write_text('\n'.join(out),encoding='utf-8')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: en-v230-next-names
+          path: ${{ runner.temp }}/en230/report
+          retention-days: 1
+          if-no-files-found: error
