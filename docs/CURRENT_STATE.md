@@ -1,10 +1,10 @@
 # LoM-VI — Current State / Continuity Authority
 
 **Status:** ACTIVE LIVING AUTHORITY  
-**Last reconciled:** 2026-09-04 21:58 (+07)  
+**Last reconciled:** 2026-09-04 23:33 (+07)  
 **Repository:** `Kjndst/LoM-VI`
 
-> Read this file first, then `docs/HANDOFF-2026-09-04-DEV10-TO-PRODUCTION-FONT.md`. New clean live evidence overrides older speculation. Stable channel remains unchanged until production acceptance.
+> Read this file first, then `docs/FONT-BODY-BUILD-SEAL-2026-09-04.md` and `docs/HANDOFF-2026-09-04-DEV10-TO-PRODUCTION-FONT.md`. New clean live evidence overrides older speculation. Stable channel remains unchanged until production acceptance.
 
 ---
 
@@ -24,9 +24,11 @@ At this reconciliation:
 - Translation `2026.09.03.4`: available
 - Font `2026.09.04.1-dev`: `available=false`
 - game build target: `2018737`
-- planned Font package: `font-2026.09.04.1-build2018737.zip`
+- sealed Font package: `font-2026.09.04.1-build2018737.zip`
+- sealed package SHA-256: `4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2`
+- manifest URL/SHA metadata are staged, but availability remains false until the exact binary is present and remotely reverified.
 
-Do not set Font available until the prebuilt package passes maintainer-side validation.
+Stable remains untouched.
 
 ---
 
@@ -95,7 +97,9 @@ Latest launch behavior supersedes the older “no Admin at startup” text:
 
 dev.9 introduced manifest-based elevation/focus but had a Windows side-by-side resource failure. dev.10 rebuilt PE resources, preserved the single-UAC/focus design, and integrated the original gold mystical eye/compass icon.
 
-Owner moved on to Font work after dev.10; no later UX complaint is recorded in this session. dev.10 is current development candidate, not stable.
+Owner moved on to Font work after dev.10; no later UX complaint is recorded. dev.10 remains the current development candidate, not stable.
+
+Known follow-up discovered during Body package contract review: dev.10 reads the Font `game_build` manifest field but does not yet enforce that field during Font apply. Do not redesign UX for the current controlled build-2018737 test, but do not call dev.10 fully production-safe across unknown future game builds until that guard exists.
 
 Earlier heavy UX2 was rejected after Windows reported `virus detected`. Do not ask users to whitelist LoM-VI or disable Defender. The thin-client generations no longer use the embedded-payload/runtime-Oodle architecture.
 
@@ -124,7 +128,7 @@ Mapped to:
 - `Aleo_Title_SDF_HeadName.ufont`
 - `Aleo_Title_Update.ufont`
 
-Next gate is Body/Regular first. Title follows only after Body live-passes.
+Current gate is Body live acceptance. Title follows only after Body live-passes.
 
 ---
 
@@ -184,7 +188,7 @@ Clone PAK:
 
 The exact stock clone is already in the capture archive. Do not ask the owner to capture it again.
 
-Do not reopen A+B+C, PAK-only, random Oodle codec/level testing, or hand-appending only a clone path to clean `inner.cache`.
+Do not reopen A+B+C, PAK-only, random Oodle codec testing, or hand-appending only a clone path to clean `inner.cache`.
 
 ---
 
@@ -218,20 +222,20 @@ Old BODY v1/v2 are discarded.
 
 They used the 3316-glyph diagnostic base instead of the real stock font, which caused most text to disappear while digits remained.
 
-Current production analysis found the actual stock Regular font is much larger:
+Production analysis found the actual stock Regular font is much larger:
 
-- `Aleo_Regular`: **29,034 physical glyphs / about 29,000 Unicode mappings**
+- `Aleo_Regular`: **29,034 physical glyphs / 29,000 Unicode mappings**
 - `Aleo_Regular_Update`: **7,144 physical glyphs / 7,143 mappings**
 
 Do not use the r2/r14 diagnostic TTF as the production template.
 
 ---
 
-## 9. Production transformation — LOCKED
+## 9. Production transformation — LOCKED AND NOW IMPLEMENTED FOR BODY
 
 For each original font:
 
-> `Unicode(original) ∩ Unicode(donor)` → rewrite the existing original GID outline with the donor glyph for that same Unicode.
+> `Unicode(original) ∩ Unicode(donor)` → rewrite the existing original GID representation with the donor glyph for that same Unicode.
 
 If donor lacks the Unicode, keep the original game glyph unchanged.
 
@@ -244,50 +248,69 @@ Constraints:
 - retain unsupported CJK/symbols from stock;
 - native Vietnamese comes from IBM Plex/Spectral at the same Unicode.
 
-Current Body intersection results:
+Sealed Body intersection:
 
-- `Aleo_Regular` → IBM Plex: **277 existing GIDs** selected;
-- `Aleo_Regular_SDF` → IBM Plex: **277 existing GIDs** selected;
-- `Aleo_Regular_Update` → IBM Plex: **109 existing GIDs** selected.
+- `Aleo_Regular` → IBM Plex: **277 existing GIDs**
+- `Aleo_Regular_SDF` → IBM Plex: **277 existing GIDs**
+- `Aleo_Regular_Update` → IBM Plex: **109 existing GIDs**
 
-All four Title assets stay stock for the first Body-only gate.
+All four Title assets remain stock for this Body-only candidate.
+
+The implemented serializer is table-preserving/in-place rather than a naive whole-font re-save. It preserves the stock SFNT envelope, cmap, glyph count/order and unrelated tables while rebuilding only the required `glyf/loca/hmtx` representation inside the original table budget and recomputing required checksums.
+
+Detailed immutable build record:
+
+`docs/FONT-BODY-BUILD-SEAL-2026-09-04.md`
 
 ---
 
-## 10. Current technical blocker / next gate
+## 10. Body production maintainer gate — PASS; live gate still open
 
-Naive FontTools full serialization is rejected.
+The previous blocker was physical Oodle slot fit after table-preserving SFNT construction. That blocker is now closed for the sealed candidate.
 
-Observed:
+### Sealed ZIP
 
-- it rebuilds/shifts `glyf/loca` despite only a few hundred changed glyphs;
-- roughly 138/139 Oodle blocks change in the large Regular entry;
-- several recompressed blocks become larger than their fixed physical slots.
+`font-2026.09.04.1-build2018737.zip`
 
-Current implementation direction:
+- size: `47,643,492` bytes
+- SHA-256: `4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2`
 
-> **table-preserving, in-place SFNT rewrite**
+### Sealed candidate PAK
 
-Required:
+`pakchunk99998-Windows_LVI_STOCK_CLONE_P.pak`
 
-1. start from exact stock embedded font bytes;
-2. preserve original table offsets/sizes whenever possible;
-3. rebuild replacement `glyf` inside the original `glyf` table budget;
-4. update `loca`;
-5. update `hmtx` where intended;
-6. update required checksums;
-7. preserve `cmap`, glyph count/order and unrelated tables;
-8. inject into original UFont wrapper;
-9. Oodle-recompress changed PAK blocks;
-10. require every block to fit its existing fixed slot;
-11. update physical entry metadata/SHA1 correctly;
-12. decompress final candidate and byte-validate the intended UFont before live testing.
+- size: `25,867,666` bytes — identical to stock-clone size
+- SHA-256: `ef86be95b380eaeb4cf021ea6145ef024f2f671d7c34f90877b7103340499633`
+- strict physical diff allowlist: PASS
 
-The stock `Aleo_Regular` `glyf` table has roughly **8.47 MB** available.
+### Maintainer validation
 
-PAK fact confirmed during production work:
+Result:
 
-> physical entry SHA1 corresponds to the compressed block payload, not the raw UFont.
+`PASS_BODY_PAK_MAINTAINER_VALIDATION`
+
+Validated:
+
+- only Body entries 0/1/5 semantically change;
+- Title entries 2/3/4/6 round-trip byte-exact stock;
+- physical entry offsets unchanged;
+- compressed block ranges/total slot sizes unchanged;
+- encoded index/footer byte-identical;
+- fresh changed blocks all fit existing slots;
+- full padded-slot Oodle decode with CRC checking PASS;
+- physical entry SHA1 recomputed over full compressed-slot payload;
+- all seven entries round-trip to intended raw UFonts;
+- dev.10 package install/uninstall contract simulation PASS.
+
+Final changed Body blocks:
+
+- Regular: blocks `0,2,3,4,5`
+- Regular_SDF: blocks `0,2,3,4,5`
+- Regular_Update: blocks `0,28,29`
+
+Most changed blocks use Kraken. Regular block 3 and Regular_SDF block 3 use official Oodle Leviathan and pass full-slot CRC round-trip off-machine. Their acceptance by C7 is therefore explicitly part of the upcoming live test rather than assumed.
+
+**Do not translate this maintainer PASS into “this exact IBM candidate already renders in game.”** Route/container and existing-GID mechanics are live-proven; this exact package still needs C7 live acceptance.
 
 ---
 
@@ -310,71 +333,49 @@ Temporary maintainer branch:
 
 `build/font-body-oodle`
 
-Current recorded HEAD:
-
-`7b99e188c993de9ceb3c32d8566633414f5f4ee6`
-
-Temporary workflow:
-
-`.github/workflows/tmp-fetch-oodle-linux.yml`
-
-Successful run: `33882824867`  
-Artifact: `oodle-linux-9`  
-Artifact ID: `9940563552`
-
-**Do not merge this temporary Oodle-fetch workflow to main.** Retire it after the maintainer build no longer needs it.
+The branch/workflow is maintainer-only and must not be merged into stable/public runtime architecture. Retire it after the build dependency is no longer needed.
 
 ---
 
 ## 12. Live machine state
 
-Do not assume the old “r14 installed” note is still true. Many patcher/install/remove experiments happened later.
+Do not assume any old r14/dev30 experimental state is still active.
 
-Before the first production Body package test:
+Before the first sealed Body package test:
 
 1. close game;
 2. if state is uncertain, use official GMZZLauncher Verify/Repair;
 3. launch once and confirm stock text;
 4. close game;
-5. confirm build `2018737` and expected clean `inner.cache`;
-6. then test through the dev thin patcher/package.
+5. confirm game build is `2018737` and clean `inner.cache` is `164d16c4835e4536dbdac9ace67bfafd3378f5c872ee7e58451e1f6acab5193e`;
+6. then install through dev.10 development channel.
 
-Do not stack a new production Font candidate on an unknown experimental state.
+Do not stack the sealed candidate on an unknown experimental state.
 
 ---
 
 ## 13. Exact next deliverable
 
-Do not redesign patcher UX unless new live evidence requires it. Do not build another marker font.
+Do not redesign patcher UX and do not reopen marker/font-topology experiments.
 
-Smallest unfinished gate:
+Smallest unfinished gate is now:
 
-> **Finish a table-preserving Body-only production clone PAK/package.**
+> **Publish the exact sealed Body ZIP, verify remote identity, enable only the development Font component, then perform live C7 acceptance through patcher dev.10.**
 
-Modify only:
+Exact order:
 
-- `Aleo_Regular`
-- `Aleo_Regular_SDF`
-- `Aleo_Regular_Update`
-
-Donor: IBM Plex Sans Condensed Medium.
-
-Keep all four Title UFonts byte-identical to stock.
-
-Then:
-
-1. validate Oodle block fit + full round-trip off-machine;
-2. package clone PAK + route data as `font-2026.09.04.1-build2018737.zip`;
-3. calculate SHA-256;
-4. publish development package;
-5. set Font `available=true` in `channel/manifest-v3-dev.json`;
-6. test install through patcher dev.10;
-7. visually validate Vietnamese, CJK preservation and UI width/overflow;
-8. after Body PASS, repeat for the four Title assets using Spectral SemiBold;
-9. after dual-face PASS, consider stable promotion.
+1. upload the exact sealed bytes as `channel/font-2026.09.04.1-build2018737.zip`;
+2. download/re-read the published bytes and require SHA-256 `4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2`;
+3. only then set Font `available=true` in `channel/manifest-v3-dev.json`;
+4. keep stable manifest/payloads unchanged;
+5. establish a known-clean build-2018737 local baseline;
+6. install Font via dev.10;
+7. launch C7 and visually validate small/body text, Vietnamese diacritics, CJK preservation, width/overflow and absence of missing text;
+8. record Body live PASS or exact failure evidence;
+9. only after Body live PASS begin the four Title assets using Spectral SemiBold.
 
 ---
 
 ## 14. Next-session instruction
 
-> **Read `docs/CURRENT_STATE.md` and `docs/HANDOFF-2026-09-04-DEV10-TO-PRODUCTION-FONT.md` as authority. Reconcile current GitHub state first. Treat patcher dev.10 as the current thin-client candidate; stable remains unchanged. Continue the smallest unfinished gate: finish the table-preserving Body-only IBM Plex production font package from the exact stock clone, validate Oodle block fit + round-trip off-machine, then wire the prebuilt package into `manifest-v3-dev.json` for a live test. Do not ask the owner to recapture the clone or find Oodle in C7.**
+> **Read `docs/CURRENT_STATE.md`, `docs/FONT-BODY-BUILD-SEAL-2026-09-04.md`, and `docs/HANDOFF-2026-09-04-DEV10-TO-PRODUCTION-FONT.md` as authority. Reconcile current GitHub state first. Patcher dev.10 remains the thin-client candidate; stable remains unchanged. The Body-only IBM Plex package is sealed and maintainer-validated but not live-accepted. Continue the smallest gate: publish the exact sealed ZIP, verify its remote SHA-256, set Font available only in `manifest-v3-dev.json`, then run the controlled build-2018737 live test. Do not recapture the clone, search C7 for Oodle, redesign UX, or begin Spectral Title before Body live PASS.**
