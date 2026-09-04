@@ -1,64 +1,36 @@
 {
-  "schema": "lomvi.release.v2",
-  "product": "Lord of Mysteries – Việt Hóa",
+  "schema": "lomvi.thin.v3",
   "channel": "stable",
-  "published_at": "2026-09-03T07:24:00+07:00",
-  "runtime": {
-    "translation_mode": "sparse-pass-through",
-    "preserve_underlay": true,
-    "fallback_order": [
-      "lom-vi",
-      "english-patch",
-      "zh-cn"
-    ],
-    "loader_contract": "lommodloader-or-lomvi-legacy"
+  "published_at": "2026-09-05T04:47:00+07:00",
+  "patcher": {
+    "minimum_version": "0.3.0"
   },
-  "components": {
-    "core": {
-      "version": "0.2.0.4",
-      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip",
-      "sha256": "417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e",
-      "size": 8052,
-      "archive_root": "game",
-      "managed_roots": [
-        "Saved/Mods/lua/mods/lom_vi",
-        "Saved/Mods/bootstrap.lua"
-      ],
-      "remove_before": [
-        "Saved/Mods/lua/mods/lom_vi/SafeFragments.lua"
-      ],
-      "install_mode": "lommodloader",
-      "notes": "Core 0.2.0.4: CRC-verified rebuilt payload; bounded NativeScan UI coverage with sparse fallback and safe loader migration."
-    },
-    "translation": {
-      "version": "2026.09.03.4",
-      "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip",
-      "sha256": "33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70",
-      "size": 1668931,
-      "archive_root": "game",
-      "managed_roots": [
-        "Saved/Mods/lua/mods/lom_vi"
-      ],
-      "depends_on": [
-        "core"
-      ],
-      "install_mode": "files",
-      "notes": "Terminology refresh: Bí Cảnh, Thế Thân, Thần Bài, Số Mệnh; otherwise identical translation/runtime coverage to 2026.09.03.3."
-    },
-    "font": {
-      "version": "2026.09.03.2",
-      "url": "https://github.com/Kjndst/LoM-VI/releases/download/v0.2.0-data.1/font-2026.09.03.2.zip",
-      "sha256": "a3e99de94aee31450ea13ec395143f1e58ea52797d80cb467883843c7a479a62",
-      "size": 650818,
-      "archive_root": "game",
-      "managed_roots": [
-        "Content/Paks/pakchunk99999-Windows_999999_VN_FONT_P.pak"
-      ],
-      "remove_before": [
-        "Content/Paks/pakchunk99999-Windows_999999_VI_FONT_TEST_P.pak"
-      ],
-      "install_mode": "files",
-      "notes": "VN Font component packaged for normal HTTPS download/update. Independent from Translation; final game filename uses VN_FONT."
-    }
+  "core": {
+    "version": "0.2.0.4",
+    "available": true,
+    "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip",
+    "sha256": "417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e",
+    "archive_root": "game"
+  },
+  "translation": {
+    "version": "2026.09.03.4",
+    "available": true,
+    "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip",
+    "sha256": "33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70",
+    "archive_root": "game"
+  },
+  "font": {
+    "version": "2026.09.05.1",
+    "available": true,
+    "game_build": "2018737",
+    "package_name": "font-2026.09.05.1-build2018737.zip",
+    "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/font-2026.09.05.1-build2018737.zip",
+    "sha256": "8fdf559401b1c3a42ae1f816f029f999690bb991445e660a4d405f0b960bedac",
+    "clean_inner_sha256": "164d16c4835e4536dbdac9ace67bfafd3378f5c872ee7e58451e1f6acab5193e",
+    "patched_inner_sha256": "e5c702c11ec55aeebe2d4f1a69dc9eb48b129863eef39af14ccf88ae88c1cdc1"
+  },
+  "uninstall": {
+    "clone_pak": "Content/Paks/pakchunk99998-Windows_LVI_STOCK_CLONE_P.pak",
+    "verify_recommended_on_unknown_state": true
   }
 }
