@@ -1,0 +1,29 @@
+{
+  "schema": "lomvi.thin.v3",
+  "channel": "development",
+  "published_at": "2026-09-04T17:36:00+07:00",
+  "patcher": {
+    "minimum_version": "0.3.0-dev.3"
+  },
+  "translation": {
+    "version": "2026.09.03.4",
+    "available": true,
+    "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip",
+    "sha256": "33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70",
+    "archive_root": "game"
+  },
+  "font": {
+    "version": "2026.09.04.1-dev",
+    "available": false,
+    "game_build": "2018737",
+    "package_name": "font-2026.09.04.1-build2018737.zip",
+    "url": "",
+    "sha256": "",
+    "clean_inner_sha256": "164d16c4835e4536dbdac9ace67bfafd3378f5c872ee7e58451e1f6acab5193e",
+    "patched_inner_sha256": "e5c702c11ec55aeebe2d4f1a69dc9eb48b129863eef39af14ccf88ae88c1cdc1"
+  },
+  "uninstall": {
+    "clone_pak": "Content/Paks/pakchunk99998-Windows_LVI_STOCK_CLONE_P.pak",
+    "verify_recommended_on_unknown_state": true
+  }
+}
