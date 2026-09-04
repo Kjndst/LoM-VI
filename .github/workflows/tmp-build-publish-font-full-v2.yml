@@ -1,0 +1,109 @@
+name: Temporary build and publish Font Full v2
+
+on:
+  push:
+    branches:
+      - build/font-full-v2-20260905
+    paths:
+      - '.github/workflows/tmp-build-publish-font-full-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pinned inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /mnt/data
+          sudo chown "$USER" /mnt/data
+          python -m pip install --quiet fonttools
+          curl -fL --retry 3 'https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/font-2026.09.04.1-build2018737.zip' -o /mnt/data/body.zip
+          echo '4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2  /mnt/data/body.zip' | sha256sum -c -
+          mkdir -p /mnt/data/body_pkg && unzip -q /mnt/data/body.zip -d /mnt/data/body_pkg
+          mkdir -p /mnt/data/oodlelib
+          curl -fL --retry 3 'https://raw.githubusercontent.com/Fortniteleakjp/oo2core_9_Linux/main/liboo2corelinux64.so.9' -o /mnt/data/oodlelib/liboo2corelinux64.so.9
+          echo '9f00b5c24e3aeef72c1a79ae972a68b21a60a82e20a37e85c626400897d25ac5  /mnt/data/oodlelib/liboo2corelinux64.so.9' | sha256sum -c -
+          curl -fL --retry 3 'https://github.com/IBM/plex/releases/download/%40ibm/plex-sans-condensed%401.1.0/ibm-plex-sans-condensed.zip' -o /mnt/data/ibm.zip
+          mkdir -p /mnt/data/ibm-tmp /mnt/data/ibm && unzip -q /mnt/data/ibm.zip -d /mnt/data/ibm-tmp
+          cp "$(find /mnt/data/ibm-tmp -type f -iname 'IBMPlexSansCondensed-Medium.ttf' -print -quit)" /mnt/data/ibm/IBMPlexSansCondensed-Medium.ttf
+          echo 'db1c6feefd95f8340b5afc41fe777746368fe863cdeb7d1d2830cd1c08f1d700  /mnt/data/ibm/IBMPlexSansCondensed-Medium.ttf' | sha256sum -c -
+          mkdir -p /mnt/data/spectral-donor
+          curl -fL --retry 3 'https://raw.githubusercontent.com/google/fonts/main/ofl/spectral/Spectral-SemiBold.ttf' -o /mnt/data/spectral-donor/Spectral-SemiBold.ttf
+          echo '5f86915a744832ecf6e4a17ab04bea091b9fa992ef5164ff65ae34c1da2fe94b  /mnt/data/spectral-donor/Spectral-SemiBold.ttf' | sha256sum -c -
+      - name: Extract seven UFonts from sealed Body v1 PAK
+        shell: bash
+        run: |
+          python - <<'PYEX'
+          from pathlib import Path
+          import ctypes,struct
+          lib=ctypes.CDLL('/mnt/data/oodlelib/liboo2corelinux64.so.9')
+          d=lib.OodleLZ_Decompress; d.restype=ctypes.c_longlong
+          d.argtypes=[ctypes.c_void_p,ctypes.c_longlong,ctypes.c_void_p,ctypes.c_longlong,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_void_p,ctypes.c_longlong,ctypes.c_void_p,ctypes.c_void_p,ctypes.c_void_p,ctypes.c_longlong,ctypes.c_int]
+          p=Path('/mnt/data/body_pkg/game/Content/Paks/pakchunk99998-Windows_LVI_STOCK_CLONE_P.pak').read_bytes()
+          offs=[0,5632000,11268096,14585856,17928192,21241856,22546432]
+          for folder in ['/mnt/data/ufonts_body','/mnt/data/ufonts_stock']: Path(folder).mkdir(exist_ok=True)
+          for idx,o in enumerate(offs):
+              raw_size=struct.unpack_from('<q',p,o+16)[0]; bc=struct.unpack_from('<I',p,o+48)[0]
+              pairs=[struct.unpack_from('<qq',p,o+52+j*16) for j in range(bc)]
+              raw=bytearray()
+              for s,e in pairs:
+                  comp=p[o+s:o+e]; want=min(65536,raw_size-len(raw)); src=ctypes.create_string_buffer(comp,len(comp)); dst=ctypes.create_string_buffer(want)
+                  got=d(src,len(comp),dst,want,1,0,0,None,0,None,None,None,0,3)
+                  if got!=want: raise SystemExit(f'decompress fail entry={idx} got={got} want={want}')
+                  raw.extend(dst.raw[:want])
+              Path(f'/mnt/data/ufonts_body/entry{idx}.ufont').write_bytes(raw)
+              Path(f'/mnt/data/ufonts_stock/entry{idx}.ufont').write_bytes(raw)
+          PYEX
+      - name: Restore build scripts and build exact candidate
+        shell: bash
+        run: |
+          echo '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' | base64 -d | gzip -d > /mnt/data/font_full_v2_builder.py
+          echo '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' | base64 -d | gzip -d > /mnt/data/font_full_v2_pak_builder.py
+          python /mnt/data/font_full_v2_builder.py >/tmp/font-build.txt
+          python /mnt/data/font_full_v2_pak_builder.py >/tmp/pak-build.txt
+          grep -q 'PASS_FONT_FULL_V2_PAK_MAINTAINER_VALIDATION' /tmp/pak-build.txt
+      - name: Seal deterministic package and require local identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /mnt/data/font_full_v2_pkg/clean/Content /mnt/data/font_full_v2_pkg/game/Content
+          cp /mnt/data/body_pkg/clean/Content/inner.cache /mnt/data/font_full_v2_pkg/clean/Content/inner.cache
+          cp /mnt/data/body_pkg/game/Content/inner.cache /mnt/data/font_full_v2_pkg/game/Content/inner.cache
+          python - <<'PYZIP'
+          from pathlib import Path
+          import zipfile
+          root=Path('/mnt/data/font_full_v2_pkg'); out=Path('/mnt/data/font-2026.09.05.1-build2018737.zip')
+          paths=['clean/Content/inner.cache','game/Content/Paks/pakchunk99998-Windows_LVI_STOCK_CLONE_P.pak','game/Content/inner.cache','validation/FONT_FULL_V2_PAK_VALIDATION.json','validation/FONT_FULL_V2_REPORT.json']
+          with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for rel in paths:
+                  info=zipfile.ZipInfo(rel,date_time=(2026,9,5,2,30,0)); info.compress_type=zipfile.ZIP_DEFLATED; info.external_attr=(0o644<<16)
+                  z.writestr(info,(root/rel).read_bytes(),compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
+          with zipfile.ZipFile(out) as z:
+              assert z.testzip() is None
+              for rel in paths: assert z.read(rel)==(root/rel).read_bytes()
+          PYZIP
+          test "$(stat -c '%s' /mnt/data/font-2026.09.05.1-build2018737.zip)" = '47509296'
+          echo '8fdf559401b1c3a42ae1f816f029f999690bb991445e660a4d405f0b960bedac  /mnt/data/font-2026.09.05.1-build2018737.zip' | sha256sum -c -
+      - uses: actions/upload-artifact@v4
+        with:
+          name: font-2026.09.05.1-build2018737
+          path: /mnt/data/font-2026.09.05.1-build2018737.zip
+          if-no-files-found: error
+      - name: Publish exact sealed binary to main channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          git checkout -B publish-main origin/main
+          cp /mnt/data/font-2026.09.05.1-build2018737.zip channel/font-2026.09.05.1-build2018737.zip
+          git add channel/font-2026.09.05.1-build2018737.zip
+          git diff --cached --quiet && exit 0
+          git commit -m 'channel: publish full Vietnamese + Spectral font candidate 2026.09.05.1'
+          git push origin HEAD:main
