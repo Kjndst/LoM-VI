@@ -17,31 +17,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download exact upstream 2.2.9 release assets
+      - name: Download exact upstream 2.2.9 release assets and LoM-VI Core
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p /tmp/recon
           cd /tmp/recon
-          curl --fail --location --retry 3 \
-            'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.2.9/lom-english-patch-data.zip' \
-            -o data.zip
-          curl --fail --location --retry 3 \
-            'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.2.9/Lord-of-Mysteries-English-Patch-2.2.exe' \
-            -o patcher.exe
+          curl --fail --location --retry 3 'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.2.9/lom-english-patch-data.zip' -o data.zip
+          curl --fail --location --retry 3 'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.2.9/Lord-of-Mysteries-English-Patch-2.2.exe' -o patcher.exe
+          curl --fail --location --retry 3 'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.2.9/release.json' -o release.json
+          curl --fail --location --retry 3 'https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip' -o lomvi-core.zip
           test "$(stat -c '%s' data.zip)" = '16783086'
           test "$(stat -c '%s' patcher.exe)" = '36662272'
           echo '28705ea108d2d46094ad7e7b991e3b4dd0b8db884087e33a09e24741a5004389  data.zip' | sha256sum -c -
           echo 'ab54b33f84d2e1c4fc6479d48a046b4efdb597da31d74e1f53bbb59fafe81800  patcher.exe' | sha256sum -c -
 
-      - name: Inventory upstream data payload
+      - name: Inventory upstream data and release metadata
         shell: bash
         run: |
           set -euo pipefail
           cd /tmp/recon
           unzip -l data.zip | tee data-list.txt
+          python3 - <<'PY' | tee release-bootstrap-fields.txt
+          import json
+          obj=json.load(open('/tmp/recon/release.json', encoding='utf-8'))
+          terms=('bootstrap','pak','cpdd','offset','allocation','hash','sha','launch','bridge','mod')
+          def walk(x,p=''):
+              if isinstance(x,dict):
+                  for k,v in x.items():
+                      q=f'{p}.{k}' if p else k
+                      if any(t in k.lower() for t in terms) and not isinstance(v,(dict,list)):
+                          print(f'{q} = {v!r}')
+                      walk(v,q)
+              elif isinstance(x,list):
+                  for i,v in enumerate(x): walk(v,f'{p}[{i}]')
+          walk(obj)
+          PY
           python3 - <<'PY' | tee data-interesting.txt
-          import hashlib, io, json, re, zipfile
+          import hashlib, zipfile
           z=zipfile.ZipFile('/tmp/recon/data.zip')
           keys=('bootstrap','cpdd','manifest','modloader','loader','launch','nativescan','bridge')
           print('=== INTERESTING ENTRIES ===')
@@ -52,61 +65,140 @@ jobs:
           print('\n=== SMALL TEXT CONTENT ===')
           for info in z.infolist():
               low=info.filename.lower()
-              if info.file_size <= 120000 and any(k in low for k in keys) and low.endswith(('.lua','.json','.txt','.toml','.ini','.cfg','.md')):
+              if info.file_size <= 180000 and any(k in low for k in keys) and low.endswith(('.lua','.json','.txt','.toml','.ini','.cfg','.md')):
                   raw=z.read(info)
                   try: txt=raw.decode('utf-8')
                   except UnicodeDecodeError: continue
                   print(f'\n----- {info.filename} ({len(raw)} bytes) -----')
-                  print(txt[:20000])
+                  print(txt[:50000])
           PY
 
-      - name: Inspect native patcher strings and embedded path evidence
+      - name: Inspect current LoM-VI Core underlay behavior
         shell: bash
         run: |
           set -euo pipefail
           cd /tmp/recon
-          PAT='CPDDTranslation|bootstrap|LOMModLoader|4660|LaunchStringExt|Saved[/\\]Mods|NativeScan|pakchunk|Content[/\\]Paks|journal|allocation|LuaFunctionLibrary|Launch[/\\]Base|manifest.lua'
+          unzip -l lomvi-core.zip | tee lomvi-core-list.txt
+          rm -rf lomvi-core && mkdir lomvi-core && unzip -q lomvi-core.zip -d lomvi-core
+          {
+            echo '=== CORE FILE HASHES ==='
+            find lomvi-core -type f -print0 | sort -z | xargs -0 sha256sum
+            echo
+            echo '=== CORE TEXT ==='
+            while IFS= read -r -d '' f; do
+              case "$f" in
+                *.lua|*.json|*.txt)
+                  echo "----- $f -----"
+                  cat "$f"
+                  echo
+                  ;;
+              esac
+            done < <(find lomvi-core -type f -print0 | sort -z)
+          } | tee lomvi-core-text.txt
+
+      - name: Extract native bootstrap template and binary evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/recon
+          PAT='CPDDTranslation|bootstrap|LOMModLoader|4660|LaunchStringExt|Saved[/\\]Mods|NativeScan|pakchunk|journal|allocation|insert_cpdd_searcher|shadow|bootstrap region'
           {
             echo '=== ASCII STRINGS ==='
-            strings -a -n 5 patcher.exe | grep -Eai -C 3 "$PAT" | head -n 4000 || true
+            strings -a -n 5 patcher.exe | grep -Eai -C 5 "$PAT" | head -n 10000 || true
             echo
             echo '=== UTF16-LE STRINGS ==='
-            strings -el -n 5 patcher.exe | grep -Eai -C 3 "$PAT" | head -n 2000 || true
+            strings -el -n 5 patcher.exe | grep -Eai -C 5 "$PAT" | head -n 4000 || true
           } | tee patcher-strings.txt
 
-          python3 - <<'PY' | tee binary-needle-context.txt
+          python3 - <<'PY' | tee embedded-bootstrap.txt
           import re
-          p='/tmp/recon/patcher.exe'
-          b=open(p,'rb').read()
-          needles=[
-            b'CPDDTranslation', b'bootstrap.lua', b'LOMModLoader', b'LaunchStringExt',
-            b'Saved\\Mods', b'Saved/Mods', b'NativeScan', b'LuaFunctionLibrary',
-            b'pakchunk', b'manifest.lua', b'4660', b'4,660', b'allocation', b'journal'
-          ]
-          print('=== ASCII NEEDLE OFFSETS ===')
+          b=open('/tmp/recon/patcher.exe','rb').read()
+          needles=[b'local function insert_cpdd_searcher()', b'insert_cpdd_searcher', b'[CPDD bootstrap]']
           for needle in needles:
-              start=0; count=0
+              print(f'=== NEEDLE {needle!r} ===')
+              start=0
               while True:
                   i=b.find(needle,start)
                   if i<0: break
-                  count+=1
-                  lo=max(0,i-240); hi=min(len(b),i+len(needle)+400)
+                  # Rust static strings commonly occupy a contiguous printable/newline region.
+                  lo=i
+                  while lo>0 and b[lo-1] in b'\t\r\n' + bytes(range(32,127)): lo-=1
+                  hi=i+len(needle)
+                  while hi<len(b) and b[hi] in b'\t\r\n' + bytes(range(32,127)): hi+=1
+                  raw=b[lo:hi]
+                  print(f'OFFSET=0x{i:X} REGION=0x{lo:X}..0x{hi:X} LEN={len(raw)}')
+                  print(raw.decode('ascii','replace'))
+                  start=i+1
+          PY
+
+          python3 - <<'PY' | tee binary-needle-context.txt
+          import re
+          b=open('/tmp/recon/patcher.exe','rb').read()
+          needles=[b'CPDDTranslation',b'bootstrap allocation:',b'Unsupported CPDD bootstrap hash',b'Unsupported stock pakchunk0',b'Read CPDD bootstrap',b'Restore original CPDD bootstrap',b'pakchunk0-Windows_P.pak',b'4660',b'4,660']
+          for needle in needles:
+              print(f'\n=== {needle!r} ===')
+              start=0; n=0
+              while True:
+                  i=b.find(needle,start)
+                  if i<0: break
+                  n+=1
+                  lo=max(0,i-1000); hi=min(len(b),i+len(needle)+1600)
                   c=b[lo:hi]
-                  printable=''.join(chr(x) if 32<=x<127 else '.' for x in c)
-                  print(f'NEEDLE={needle!r} OFFSET=0x{i:X} COUNT={count}')
+                  printable=''.join(chr(x) if x in (9,10,13) or 32<=x<127 else '.' for x in c)
+                  print(f'OFFSET=0x{i:X} OCCURRENCE={n}')
                   print(printable)
                   start=i+1
-                  if count>=20: break
-          print('\n=== UTF16 NEEDLE OFFSETS ===')
-          for s in ['CPDDTranslation','bootstrap.lua','LOMModLoader','LaunchStringExt','Saved\\Mods','NativeScan','pakchunk','manifest.lua']:
-              needle=s.encode('utf-16le')
-              i=b.find(needle)
-              if i>=0:
-                  lo=max(0,i-480); hi=min(len(b),i+len(needle)+800)
-                  c=b[lo:hi]
-                  # render every other byte when plausible plus raw hex prefix
-                  print(f'NEEDLE={s!r} OFFSET=0x{i:X}')
-                  print(c[:256].hex())
+                  if n>=20: break
+
+          print('\n=== ALL ASCII SHA256-LIKE STRINGS ===')
+          seen=set()
+          for m in re.finditer(rb'(?<![0-9A-Fa-f])[0-9A-Fa-f]{64}(?![0-9A-Fa-f])',b):
+              s=m.group().decode()
+              if s.lower() not in seen:
+                  seen.add(s.lower()); print(f'0x{m.start():X} {s}')
+          PY
+
+      - name: PE xref scan near bootstrap diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/recon
+          python3 -m pip install --quiet pefile capstone
+          python3 - <<'PY' | tee pe-xrefs.txt
+          import pefile
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_64
+          from capstone.x86 import X86_OP_MEM, X86_REG_RIP
+          path='/tmp/recon/patcher.exe'
+          b=open(path,'rb').read(); pe=pefile.PE(path)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          targets=[]
+          for needle in [b'bootstrap allocation:',b'Unsupported CPDD bootstrap hash',b'Unsupported stock pakchunk0',b'Read CPDD bootstrap',b'Restore original CPDD bootstrap']:
+              pos=b.find(needle)
+              if pos<0: continue
+              rva=pe.get_rva_from_offset(pos); va=base+rva
+              targets.append((needle.decode(errors='replace'),pos,va))
+              print(f'TARGET {needle!r} file=0x{pos:X} va=0x{va:X}')
+          text=None
+          for s in pe.sections:
+              if s.Name.rstrip(b'\0')==b'.text': text=s; break
+          if text is None: raise SystemExit('NO_TEXT')
+          code=text.get_data(); code_va=base+text.VirtualAddress
+          md=Cs(CS_ARCH_X86,CS_MODE_64); md.detail=True
+          ins=list(md.disasm(code,code_va))
+          byaddr={x.address:i for i,x in enumerate(ins)}
+          for name,pos,tva in targets:
+              print(f'\n=== XREFS {name} ===')
+              hits=[]
+              for idx,x in enumerate(ins):
+                  for op in x.operands:
+                      if op.type==X86_OP_MEM and op.mem.base==X86_REG_RIP:
+                          dst=x.address+x.size+op.mem.disp
+                          if abs(dst-tva)<8:
+                              hits.append(idx)
+              for idx in hits[:20]:
+                  print(f'-- xref 0x{ins[idx].address:X} --')
+                  for y in ins[max(0,idx-25):min(len(ins),idx+50)]:
+                      print(f'0x{y.address:X}: {y.mnemonic:8s} {y.op_str}')
           PY
 
       - name: Build compact recon artifact
@@ -115,11 +207,11 @@ jobs:
           set -euo pipefail
           cd /tmp/recon
           mkdir -p artifact
-          cp data-list.txt data-interesting.txt patcher-strings.txt binary-needle-context.txt artifact/
-          sha256sum data.zip patcher.exe > artifact/UPSTREAM_SHA256.txt
+          cp data-list.txt data-interesting.txt release-bootstrap-fields.txt lomvi-core-list.txt lomvi-core-text.txt patcher-strings.txt embedded-bootstrap.txt binary-needle-context.txt pe-xrefs.txt artifact/
+          sha256sum data.zip patcher.exe release.json lomvi-core.zip > artifact/SHA256.txt
 
       - uses: actions/upload-artifact@v4
         with:
-          name: native-bootstrap-recon
+          name: native-bootstrap-recon-v2
           path: /tmp/recon/artifact
           if-no-files-found: error
