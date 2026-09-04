@@ -1,7 +1,7 @@
 {
   "schema": "lomvi.thin.v3",
   "channel": "development",
-  "published_at": "2026-09-04T23:33:00+07:00",
+  "published_at": "2026-09-05T00:26:00+07:00",
   "patcher": {
     "minimum_version": "0.3.0-dev.3"
   },
@@ -21,7 +21,7 @@
   },
   "font": {
     "version": "2026.09.04.1-dev",
-    "available": false,
+    "available": true,
     "game_build": "2018737",
     "package_name": "font-2026.09.04.1-build2018737.zip",
     "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/font-2026.09.04.1-build2018737.zip",
