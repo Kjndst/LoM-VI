@@ -1,7 +1,7 @@
 {
   "schema": "lomvi.thin.v3",
   "channel": "development",
-  "published_at": "2026-09-05T00:26:00+07:00",
+  "published_at": "2026-09-05T03:46:00+07:00",
   "patcher": {
     "minimum_version": "0.3.0-dev.3"
   },
@@ -20,12 +20,12 @@
     "archive_root": "game"
   },
   "font": {
-    "version": "2026.09.04.1-dev",
+    "version": "2026.09.05.1-dev",
     "available": true,
     "game_build": "2018737",
-    "package_name": "font-2026.09.04.1-build2018737.zip",
-    "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/font-2026.09.04.1-build2018737.zip",
-    "sha256": "4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2",
+    "package_name": "font-2026.09.05.1-build2018737.zip",
+    "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/font-2026.09.05.1-build2018737.zip",
+    "sha256": "8fdf559401b1c3a42ae1f816f029f999690bb991445e660a4d405f0b960bedac",
     "clean_inner_sha256": "164d16c4835e4536dbdac9ace67bfafd3378f5c872ee7e58451e1f6acab5193e",
     "patched_inner_sha256": "e5c702c11ec55aeebe2d4f1a69dc9eb48b129863eef39af14ccf88ae88c1cdc1"
   },
