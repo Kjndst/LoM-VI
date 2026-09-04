@@ -2,11 +2,13 @@
 
 This document supersedes the old backup-dependent uninstall semantics in `docs/PATCHER-PRODUCTION-UX-2026-09-04.md` and records the owner-approved public distribution architecture.
 
+**Latest UX/UAC decisions in `docs/CURRENT_STATE.md` and `docs/HANDOFF-2026-09-04-DEV10-TO-PRODUCTION-FONT.md` override earlier prototype notes in this document.**
+
 ## 1. Product boundary
 
 The public `LoM-VI.exe` is a **thin patcher/updater**, not a font builder or PAK builder.
 
-Heavy/generated data is prebuilt by the maintainer and published as versioned GitHub Release packages. The public patcher must not build Oodle PAK data, transform fonts, or download/load executable DLL dependencies at runtime.
+Heavy/generated data is prebuilt by the maintainer and published as versioned GitHub packages. The public patcher must not build Oodle PAK data, transform fonts, or download/load executable DLL dependencies at runtime.
 
 Stable channel remains unchanged until live acceptance.
 
@@ -59,7 +61,7 @@ Expected behavior:
 - never overwrite an unknown `inner.cache` state blindly;
 - if exact official bytes are desired or the current state is unknown, direct the user to the official launcher Verify/Repair.
 
-A short-lived same-operation rollback is still allowed while an install/update is in progress: if an apply step fails, files modified by that *same operation* may be reverted. This transactional safety mechanism is distinct from the product's Uninstall feature.
+A short-lived same-operation rollback is still allowed while an install/update is in progress. This transactional safety mechanism is distinct from the product's Uninstall feature.
 
 ## 5. AV-friendly public patcher requirements
 
@@ -67,15 +69,22 @@ Prototype UX2 (`f14f79cf66a8b81afd17c34ee11603ff03417fe510b895b0224da6dc82dc0c1b
 
 Do not ask users to whitelist the patcher or disable Defender.
 
-The next public patcher must:
+The public patcher must:
 
 - remain small; do not embed clone PAK, `inner.cache`, donor font banks or other heavy payloads;
 - not download/load an Oodle or other executable DLL at runtime;
-- not graft PE resources after build;
-- not request Administrator privileges at startup;
-- request elevation only if a real write operation requires it;
 - use ordinary HTTPS downloads, JSON parsing, SHA-256 verification, ZIP extraction and file operations;
 - keep source/build behavior transparent and deterministic.
+
+### Administrator behavior — LATEST OWNER DECISION
+
+The earlier prototype rule “do not request Administrator privileges at startup” is superseded.
+
+The owner explicitly chose:
+
+> request Administrator once before the patcher UI opens, then do not prompt again during that process.
+
+Use a standard Windows application manifest (`requireAdministrator`) rather than self-relaunching with `runas`. Expected behavior is exactly one UAC prompt, then one elevated process that foregrounds/focuses the patcher window.
 
 ## 6. UX authority
 
@@ -83,15 +92,20 @@ Use `LoM-VI-v0.2.0-dev.18-B-only-probe` as the visual/interaction reference:
 
 - dark/black + gold;
 - compact layout;
+- rounded cards/buttons;
 - visible hover and press-down feedback;
 - game discovery card + `ĐỔI` action;
-- Translation card;
-- Font card;
+- Translation card + checkbox;
+- Font card + checkbox;
 - primary install/update/repair action;
-- `GỠ CÀI ĐẶT` action;
+- `GỠ CÀI ĐẶT` action, disabled when no LoM-VI effect exists;
+- visible progress bar;
+- inline operational status inside the patcher, not MessageBox popups;
 - launcher version may be shown subtly at bottom-right.
 
 Do not expose backend implementation details.
+
+Current candidate is dev.10: `LoM-VI-v0.3.0-dev.10-Fixed-UAC-Icon.exe`, SHA-256 `36892d35242922dae55b0735370507670257e3b82d28de6f661023c5f6193b44`.
 
 ## 7. Game discovery / loose selection
 
@@ -107,16 +121,16 @@ The patcher resolves the actual C7 root by bounded upward/downward search and va
 
 Do not require a literal `C:\Program Files\GMZZLauncher\Game\C7` path.
 
-## 8. Next deliverable
+## 8. Current next deliverable
 
-Build a small Windows GUI thin-client prototype that exercises:
+Patcher UX is not the active gate unless new live evidence shows a regression.
 
-1. dev18-style dark/gold UI;
-2. hover/press states;
-3. automatic and loose manual C7 discovery;
-4. remote development manifest retrieval;
-5. SHA-256 package verification/extraction path;
-6. LoM-VI effect-removal semantics for uninstall;
-7. no embedded heavy production payload and no runtime Oodle dependency.
+The active gate is the prebuilt production Font package:
 
-The production font Release asset may remain unpublished until its prebuilt package passes maintainer-side validation; the thin patcher must represent that as unavailable rather than fabricating a successful install.
+1. finish table-preserving Body-only IBM Plex transformation on the exact stock game fonts;
+2. validate fixed-slot Oodle recompression and full round-trip in the maintainer environment;
+3. package `font-2026.09.04.1-build2018737.zip`;
+4. publish it to the development channel;
+5. set Font `available=true` in `channel/manifest-v3-dev.json` only after validation;
+6. live-test through patcher dev.10;
+7. then repeat for Spectral Title and only later consider stable promotion.
