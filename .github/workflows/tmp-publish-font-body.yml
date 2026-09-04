@@ -31,7 +31,13 @@ jobs:
           esac
 
           OUT=/tmp/font-2026.09.04.1-build2018737.zip
-          curl --fail --location --retry 3 --retry-all-errors "$URL" --output "$OUT"
+          if [[ "$URL" == https://drive.google.com/* ]]; then
+            python3 -m pip install --disable-pip-version-check --quiet 'gdown==5.2.0'
+            gdown --fuzzy "$URL" --output "$OUT"
+          else
+            curl --fail --location --retry 3 --retry-all-errors "$URL" --output "$OUT"
+          fi
+
           test "$(stat -c '%s' "$OUT")" = '47643492'
           echo '4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2  /tmp/font-2026.09.04.1-build2018737.zip' | sha256sum -c -
           unzip -t "$OUT"
