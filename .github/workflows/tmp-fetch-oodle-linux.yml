@@ -22,10 +22,30 @@ jobs:
           curl -fL --retry 3 --retry-delay 2 "$url" -o liboo2corelinux64.so.9
           test "$(stat -c%s liboo2corelinux64.so.9)" = '688096'
           sha256sum liboo2corelinux64.so.9
+      - name: Fetch official IBM Plex Sans Condensed donor
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://github.com/IBM/plex/releases/download/%40ibm/plex-sans-condensed%402.0.0/ibm-plex-sans-condensed.zip'
+          curl -fL --retry 3 --retry-delay 2 "$url" -o ibm-plex-sans-condensed.zip
+          echo 'f86ba73abbeed7cf7690ead863192a87211dfc2b0cef0ac6bf4700533ec5ab9e  ibm-plex-sans-condensed.zip' | sha256sum -c -
+          mkdir -p plex
+          unzip -q ibm-plex-sans-condensed.zip -d plex
+          donor="$(find plex -type f -iname 'IBMPlexSansCondensed-Medium.ttf' -print -quit)"
+          test -n "$donor"
+          cp "$donor" IBMPlexSansCondensed-Medium.ttf
+          sha256sum IBMPlexSansCondensed-Medium.ttf
       - name: Upload runtime artifact
         uses: actions/upload-artifact@v4
         with:
           name: oodle-linux-9
           path: liboo2corelinux64.so.9
+          if-no-files-found: error
+          retention-days: 1
+      - name: Upload IBM Plex donor artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibm-plex-sans-condensed-medium
+          path: IBMPlexSansCondensed-Medium.ttf
           if-no-files-found: error
           retention-days: 1
