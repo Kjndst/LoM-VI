@@ -1,0 +1,63 @@
+name: Temporary dev11 runtime recon
+
+on:
+  push:
+    branches:
+      - dev11-native-bootstrap-integration
+    paths:
+      - '.github/workflows/tmp-dev11-recon.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  recon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract current LoM-VI Core
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/recon/core" "$RUNNER_TEMP/recon/english"
+          curl -fL --retry 3 'https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip' -o "$RUNNER_TEMP/core.zip"
+          test "$(sha256sum "$RUNNER_TEMP/core.zip" | awk '{print $1}')" = '417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e'
+          unzip -q "$RUNNER_TEMP/core.zip" -d "$RUNNER_TEMP/recon/core"
+          find "$RUNNER_TEMP/recon/core" -type f -printf '%P\n' | sort > "$RUNNER_TEMP/recon/core-files.txt"
+
+      - name: Extract pinned English patch runtime underlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.2.9/lom-english-patch-data.zip' -o "$RUNNER_TEMP/english.zip"
+          test "$(stat -c%s "$RUNNER_TEMP/english.zip")" = '16783086'
+          test "$(sha256sum "$RUNNER_TEMP/english.zip" | awk '{print $1}')" = '28705ea108d2d46094ad7e7b991e3b4dd0b8db884087e33a09e24741a5004389'
+          unzip -q "$RUNNER_TEMP/english.zip" -d "$RUNNER_TEMP/recon/english"
+          find "$RUNNER_TEMP/recon/english" -type f -printf '%P\n' | sort > "$RUNNER_TEMP/recon/english-files.txt"
+
+      - name: Copy high-value text files
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/recon/high-value"
+          mkdir -p "$out/core" "$out/english"
+          for f in \
+            "$RUNNER_TEMP/recon/core/game/Saved/Mods/bootstrap.lua" \
+            "$RUNNER_TEMP/recon/core/game/Saved/Mods/manifest.lua" \
+            "$RUNNER_TEMP/recon/core/game/Saved/Mods/lua/mods/lom_vi/Init.lua"; do
+            if [ -f "$f" ]; then cp "$f" "$out/core/$(basename "$f")"; fi
+          done
+          find "$RUNNER_TEMP/recon/english" -type f \( -name 'bootstrap.lua' -o -name 'manifest.lua' -o -name 'CPDDTranslation.lua' -o -name 'Init.lua' -o -name '*runtime*.lua' \) -print0 | while IFS= read -r -d '' f; do
+            rel="${f#"$RUNNER_TEMP/recon/english/"}"
+            safe="$(printf '%s' "$rel" | tr '/\\' '__')"
+            cp "$f" "$out/english/$safe"
+          done
+          sha256sum "$RUNNER_TEMP/recon/english/payload/bridge/LaunchInstance.native-bridge.padded.oodle" > "$RUNNER_TEMP/recon/native-region-sha256.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dev11-runtime-recon
+          path: ${{ runner.temp }}/recon
+          if-no-files-found: error
+          retention-days: 1
