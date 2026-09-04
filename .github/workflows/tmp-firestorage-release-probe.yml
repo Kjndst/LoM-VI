@@ -14,20 +14,28 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe share page
+      - name: Probe share page and client API
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/probe"
+          mkdir -p "$RUNNER_TEMP/probe/js"
           cd "$RUNNER_TEMP/probe"
-          curl -fL --retry 3 -A 'Mozilla/5.0' 'https://firestorage.ai/ja/f/3ku3uUdQRdWv' -o page.html
-          wc -c page.html
-          grep -Eo 'https?://[^"<> ]+' page.html | sed 's/&amp;/\&/g' | sort -u > urls.txt || true
-          grep -Ein 'LoM-VI|download|file|NVmEvsZ2EFGKVAGa|3ku3uUdQRdWv|01a06e5decec70dbb0d54fa24e18da18|01a06e60505a71ccbddd130ee9d9b031' page.html > hits.txt || true
-          sed -n '1,220p' hits.txt
-          sed -n '1,220p' urls.txt
+          base='https://firestorage.ai'
+          share='https://firestorage.ai/ja/f/3ku3uUdQRdWv'
+          curl -fL --retry 3 -A 'Mozilla/5.0' "$share" -o page.html
+          grep -Eo 'src="[^"]+\.js"' page.html | sed -E 's/^src="|"$//g' | sort -u > scripts.txt
+          : > js-hits.txt
+          while IFS= read -r src; do
+            [ -n "$src" ] || continue
+            name=$(printf '%s' "$src" | sha256sum | cut -c1-16)
+            curl -fL --retry 3 -A 'Mozilla/5.0' "$base$src" -o "js/$name.js"
+            echo "===== $src =====" >> js-hits.txt
+            grep -Eo '.{0,180}(api/|/api|download|signed|presign|shareId|share_id|publicId|public_id|objectId|object_id|fileId|file_id).{0,260}' "js/$name.js" | head -n 250 >> js-hits.txt || true
+          done < scripts.txt
+          grep -Ein 'LoM-VI|download|file|NVmEvsZ2EFGKVAGa|3ku3uUdQRdWv|01a06e5decec70dbb0d54fa24e18da18|01a06e60505a71ccbddd130ee9d9b031' page.html > page-hits.txt || true
+          sed -n '1,700p' js-hits.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: firestorage-release-probe
+          name: firestorage-release-probe-v2
           path: ${{ runner.temp }}/probe
           retention-days: 1
