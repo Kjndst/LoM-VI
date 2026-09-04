@@ -1,0 +1,33 @@
+name: Temporary firestorage release probe
+
+on:
+  push:
+    branches:
+      - tmp/firestorage-release-probe
+    paths:
+      - '.github/workflows/tmp-firestorage-release-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe share page
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/probe"
+          cd "$RUNNER_TEMP/probe"
+          curl -fL --retry 3 -A 'Mozilla/5.0' 'https://firestorage.ai/ja/f/3ku3uUdQRdWv' -o page.html
+          wc -c page.html
+          grep -Eo 'https?://[^"<> ]+' page.html | sed 's/&amp;/\&/g' | sort -u > urls.txt || true
+          grep -Ein 'LoM-VI|download|file|NVmEvsZ2EFGKVAGa|3ku3uUdQRdWv|01a06e5decec70dbb0d54fa24e18da18|01a06e60505a71ccbddd130ee9d9b031' page.html > hits.txt || true
+          sed -n '1,220p' hits.txt
+          sed -n '1,220p' urls.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firestorage-release-probe
+          path: ${{ runner.temp }}/probe
+          retention-days: 1
