@@ -2,7 +2,7 @@
 
 **Status:** ACTIVE LIVING AUTHORITY  
 **Last reconciled:** 2026-09-04 (+07)  
-**Repository:** `Kjndst/LoM-VI`  
+**Repository:** `Kjndst/LoM-VI`
 
 > Read this file before continuing development. It exists to prevent context drift.
 >
@@ -38,19 +38,83 @@ Current stable channel (`channel/manifest.json`):
 
 ---
 
-## 2. Current blocker
+## 2. LOCKED HISTORY — do not reinterpret
 
-**Reliable Font takeover on the current game build.**
+These four statements are the historical authority for future sessions.
+
+### 2.1 Vietnamese localization has worked in-game before
+
+LoM-VI **has previously applied Vietnamese translation visibly in the game**.
+
+Some UI/string regions still remained Chinese. That can mean untranslated data, incomplete runtime coverage, or a source/display path not yet reached by the current Translation/Core implementation.
+
+Therefore:
+
+> **The Translation/Core lane is historically proven capable of visibly applying Vietnamese text.**
+
+Do not confuse the current Font blocker with “Vietnamese localization has never worked”.
+
+### 2.2 B+C is the only Font route that has ever produced visible interaction
+
+Historical route labels:
+
+- **A** = `C7/Saved/kscache/local.cache`
+- **B** = `C7/Content/inner.cache`
+- **C** = active `C7/Saved/kscache/package_*.manifest`
+
+Only **B+C** ever produced a visible runtime interaction attributable to the Font experiment: **text disappeared / failed to render** when the routed payload was bad.
+
+This is evidence that B+C affects the relevant runtime asset-routing state. It is **not** proof that a replacement font successfully loaded.
+
+Therefore the correct statement is:
+
+> **B+C is the only historically proven route with visible Font-path interaction.**
+
+Do not upgrade this wording to “Font takeover proven” unless a different font is actually rendered on screen.
+
+### 2.3 No alternate font has ever been positively rendered in-game by LoM-VI
+
+As of this authority update:
+
+> **LoM-VI has never yet produced positive visual proof of a different replacement font rendering in the game.**
+
+Known stock-clone PASS results only prove that a custom route/container state can preserve correct stock rendering. They do **not** prove that a new font face loaded.
+
+Missing text is also not proof of a custom font loading; it may be asset-load/rejection failure.
+
+The first true Font success must show an unmistakably different face/weight in-game.
+
+### 2.4 MVH is no longer proof of a currently working patch
+
+Mê Việt Hóa (MVH) remains useful as a **historical/structural reference**, but it no longer proves that the patch works correctly on the current game build.
+
+Current clean testing did not produce visible MVH Font takeover via direct `_P.pak`, and MVH has also shown missing-text behavior during current-build experiments.
+
+Therefore:
+
+> **MVH is not a current known-good runtime oracle.**
+
+Use it to study structure, packaging, fonts, compression and historical installer behavior — not as proof that the present game accepts the same patch unchanged.
+
+---
+
+## 3. Current blocker
+
+**Reliable positive Font replacement on the current game build.**
 
 The next live gate is intentionally end-to-end and visual:
 
 > **FULL-BOLD VISUAL TAKEOVER CONTROL**
 
-Vietnamese translation is enabled and all seven relevant Aleo Font assets are replaced by one deliberately heavy Bold face. Success must be obvious by eye across many UI surfaces, not inferred from “small text present/missing”.
+Vietnamese translation is enabled and all seven relevant Aleo Font assets are replaced by one deliberately heavy Bold face. Success must be obvious by eye across many UI surfaces.
+
+The decisive question is no longer “does text disappear?” but:
+
+> **Can we visibly render a different font in-game?**
 
 ---
 
-## 3. Current live game state
+## 4. Current live game state
 
 Latest clean sequence:
 
@@ -59,40 +123,36 @@ Latest clean sequence:
 3. stock game launched and **small/legal/version text rendered correctly**;
 4. exact-stock direct `_P.pak` was tested: text still rendered, no visible change;
 5. MVH direct `_P.pak` was tested from the same B/C-neutral baseline: text still rendered and visible Chinese/font remained stock-looking;
-6. `LoM-VI-BC-Recipe-Capture.exe` was then run successfully;
+6. `LoM-VI-BC-Recipe-Capture.exe` was run successfully;
 7. the capture tool ran exact dev.24-r4 temporarily and restored the pre-run state byte-for-byte.
 
-Therefore the current state after the capture is the **pre-capture state**, including the direct MVH `_P.pak` that was present before the capture. The machine is **not** left in dev.24-r4 state.
+Therefore the current state after capture is the **pre-capture state**, including the direct MVH `_P.pak` that was present before capture. The machine is **not** left in dev.24-r4 state.
 
-Do not infer that direct `_P.pak` alone wins Font resolution. Clean retesting produced **no positive visual Font takeover marker**.
+Direct `_P.pak` alone produced no positive visual Font replacement marker.
 
 ---
 
-## 4. Historical route labels and corrected authority
-
-Route labels:
-
-- **A** = `C7/Saved/kscache/local.cache`
-- **B** = `C7/Content/inner.cache`
-- **C** = active `C7/Saved/kscache/package_*.manifest`
+## 5. Route experiments — corrected authority
 
 Historical isolation matrix:
 
-| Route | Result |
+| Route | Observed result |
 |---|---|
 | no A / no B / no C | stock font |
 | A only | stock font |
 | B only | stock font after asset update |
 | C only | stock font after asset update |
 | A+B | stock font |
-| **B+C** | **takeover occurs; bad payload can cause missing text** |
-| A+B+C | same takeover behavior |
+| **B+C** | **visible Font-path interaction: bad payload caused missing text** |
+| A+B+C | same missing-text class of interaction |
 
-Historical conclusion remains useful:
+Correct conclusion:
 
-> **A/local.cache is not required. The successful route depends on the B/C authority state, not a loose PAK alone.**
+> **A/local.cache is not required for the historically observed Font interaction. B+C is the minimum route state that visibly affected Font rendering.**
 
-### Important refinement from the 2026-09-04 recipe capture
+Do not describe this matrix as proof that a replacement font face loaded. It did not.
+
+### Refinement from the 2026-09-04 recipe capture
 
 The clean before→dev.24-r4 capture showed:
 
@@ -102,17 +162,17 @@ The clean before→dev.24-r4 capture showed:
 - `inner.cache`: **changed**
 - dev.24 clone PAK: installed
 
-So on the current clean game build, dev.24-r4 did **not** dynamically rewrite C. The active official C manifest was already the required state.
+So on the current clean game build, dev.24-r4 did **not** dynamically rewrite C. The active official C manifest was already in the state required by that known-good stock-clone experiment.
 
-Thus the operational recipe captured now is more precisely:
+Operationally, that captured recipe is more precisely:
 
 > **current official C + dev.24-patched B + exact clone PAK**
 
-Do **not** keep saying “regenerate B+C from every new PAK” as if both files necessarily mutate. The current unknown is the dynamic route/index data inside **B/`inner.cache`**.
+Do not keep saying “regenerate B+C from every new PAK” as if both files necessarily mutate. The dynamic route/index transformation observed in the successful stock-clone recipe lives in **B/`inner.cache`**.
 
 ---
 
-## 5. Exact B+C Recipe Capture — PASS
+## 6. Exact B+C Recipe Capture — PASS
 
 Artifact run by owner:
 
@@ -178,15 +238,17 @@ The newly added path is exactly:
 
 Its encoded path entry accounts for the exact `+53` byte file-size increase.
 
-However, **this is not merely a path append**. After aligning the path-list boundary, a large route/index region in the remainder also changes. Therefore:
+However, this is not merely a path append. After aligning the path-list boundary, a large route/index region in the remainder also changes.
+
+Therefore:
 
 > **Do not implement the next gate by simply appending the clone path to clean `inner.cache`.**
 
-Dev.24’s dynamic route/index transformation remains part of the known-good recipe.
+Dev.24’s dynamic route/index transformation is part of the known-good stock-clone recipe.
 
 ---
 
-## 6. Known-good controls
+## 7. Known-good controls — what they prove and what they do not
 
 ### Official clean recovery
 
@@ -202,11 +264,20 @@ Reconfirmed live 2026-09-04.
 ### dev.23 — Compressed Stock Clone
 
 - custom LoM V12 PAK;
-- seven stock `.ufont` entries;
+- seven **stock** `.ufont` entries;
 - exact stock Oodle-compressed bytes;
 - route authority active.
 
 Result: **PASS — stock text renders normally.**
+
+What it proves:
+
+- a custom V12 clone container plus route state can coexist with correct rendering;
+- exact stock font payload can be accepted through that setup.
+
+What it does **not** prove:
+
+- that any alternate font face was loaded.
 
 ### dev.24-r4 — Exact dev.23 Restore
 
@@ -218,15 +289,21 @@ Artifact SHA-256:
 
 Result repeatedly reconfirmed: **PASS — small/body text renders.**
 
+Again: this is a **stock-clone render control**, not proof of custom-font replacement.
+
 ### dev.30-r2 — regenerated PakEntry + exact stock Oodle
 
 Exact stock raw and exact stock compressed payload with regenerated PakEntry metadata rendered small text.
 
-Interpretation: the custom PakEntry writer is not inherently rejected when carrying exact accepted payload bytes.
+Interpretation:
+
+> the custom PakEntry writer is not inherently rejected when carrying exact accepted stock payload bytes.
+
+This still does **not** prove an alternate font has rendered.
 
 ---
 
-## 7. Compression investigation — resolved lessons
+## 8. Compression investigation — resolved lessons
 
 Observed:
 
@@ -237,7 +314,7 @@ Observed:
 - h2r3 only block001 fresh OSS Kraken → missing small text
 - h2o1 only block001 official Oodle 2.9.10 → missing small text
 
-But later MVH analysis proved that its custom `Aleo_Regular` stream can be recompressed **525/525 blocks byte-for-byte** using official Oodle 2.9.10 / Kraken / Normal.
+Later MVH analysis proved that its custom `Aleo_Regular` stream can be recompressed **525/525 blocks byte-for-byte** using official Oodle 2.9.10 / Kraken / Normal.
 
 Therefore:
 
@@ -249,7 +326,7 @@ Do not return to random Kraken/Mermaid/Leviathan/level roulette.
 
 ---
 
-## 8. Direct `_P.pak` experiments — corrected conclusion
+## 9. Direct `_P.pak` experiments — corrected conclusion
 
 Early direct-Pak disappearance tests were contaminated by stale dev.24 route state and are invalid as direct-route evidence.
 
@@ -258,17 +335,17 @@ Clean official-repair retest:
 - exact-stock Aleo direct `_P.pak` → no visible change;
 - MVH direct `_P.pak` → no visible change.
 
-MVH’s Aleo contains the relevant CJK codepoints and deliberate glyph remaps, so unchanged `混沌海`-style text is strong evidence that the MVH Font asset did not become active.
+MVH’s Aleo contains relevant CJK codepoints and deliberate glyph remaps, so unchanged `混沌海`-style text is strong evidence that the MVH Font asset did not become active.
 
 Current conclusion:
 
-> **PAK-only is not a sufficient Font takeover solution on this game build.**
+> **PAK-only is not a sufficient demonstrated Font replacement solution on this game build.**
 
 Do not repeat PAK-only testing unless the mount premise materially changes.
 
 ---
 
-## 9. MVH reference — what it is and is not
+## 10. MVH reference — structural only, not current working proof
 
 Uploaded files named `pakchunk0-Windows_P*.pak` are **MVH addon/mod PAKs**, not stock game PAKs.
 
@@ -276,7 +353,7 @@ Real stock authority:
 
 `C7/Content/Paks/pakchunk0-Windows.pak`
 
-MVH is not a current known-good render oracle; it can itself exhibit missing-text behavior on the current game.
+MVH is **not** a current known-good runtime/render oracle.
 
 It remains structurally valuable because:
 
@@ -286,13 +363,13 @@ It remains structurally valuable because:
 - MVH compression is reproducible with official Oodle;
 - its installer historically works with route/cache layers beyond a loose PAK.
 
-Never use MVH bytes as stock bytes.
+Never use MVH bytes as stock bytes, and never cite the historical MVH patch as proof that the current game build accepts that patch unchanged.
 
 ---
 
-## 10. Captured clone PAK template authority
+## 11. Captured clone PAK template authority
 
-Exact dev.24 clone PAK contains seven Font entries and is a valid LoM V12/encrypted-index template.
+Exact dev.24 clone PAK contains seven Font entries and is a valid LoM V12/encrypted-index **stock-clone template**.
 
 Seven paths:
 
@@ -326,13 +403,13 @@ The next diagnostic should preserve:
 - encoded-entry slot offsets;
 - path-hash/full-directory topology;
 
-while rebuilding only the Font payload/header and encoded entry fields required by the new compressed sizes/block counts.
+while rebuilding only the Font payload/header and encoded entry fields required by new compressed sizes/block counts.
 
-This minimizes variables and lets the known dev.24 inner route continue pointing at the same container identity/topology.
+This minimizes variables while attempting the **first positive alternate-font render**.
 
 ---
 
-## 11. Community tooling — keep only the useful lessons
+## 12. Community tooling — keep only useful lessons
 
 Useful:
 
@@ -351,75 +428,71 @@ Do not repeat as new work:
 
 ---
 
-## 12. Retracted/corrected conclusions
+## 13. Retracted/corrected conclusions
 
 - **RETRACTED:** uploaded `_P.pak` is stock data. It is MVH addon data.
 - **RETRACTED:** direct `_P.pak` was proven to break fonts. Early tests were contaminated.
 - **RETRACTED:** official Oodle 2.9.10 is inherently incompatible. MVH disproves this.
 - **RETRACTED:** MVH is a current known-good Font oracle. It is only a structural/historical reference.
 - **RETRACTED:** missing text positively proves a replacement font loaded. Missing text may be an asset-load failure.
+- **RETRACTED:** B+C “takeover” means an alternate font successfully rendered. It only proved visible Font-path interaction via missing text.
+- **RETRACTED:** dev.23/dev.24 stock-clone PASS proves custom font replacement. It proves accepted stock-clone rendering only.
 - **RETRACTED:** dev.24 clean recipe necessarily rewrites package manifest C. The capture proves C stayed byte-identical.
 - **RETRACTED:** dev.24 `inner.cache` change is only “append a PAK path”. A large aligned route/index region also changes.
 
 Correct diagnostic principle:
 
-> Require a **positive visual marker**.
-
-For the next gate, that marker is deliberately obvious **Bold weight across all translated/Latin UI surfaces**.
+> Require a **positive visual marker** from a genuinely different font.
 
 ---
 
-## 13. Exact next gate — FULL-BOLD VISUAL TAKEOVER CONTROL
+## 14. Exact next gate — FULL-BOLD VISUAL TAKEOVER CONTROL
 
 Owner-approved design:
 
 1. Enable stable LoM-VI Translation/Core so the live screen contains obvious Vietnamese/Latin text.
 2. Replace **all seven Aleo Font assets**, not only `Aleo_Regular`.
 3. Use the same deliberately heavy diagnostic font for all seven.
-4. Preserve each stock `.ufont` wrapper/trailing asset bytes where applicable; replace only its embedded TTF payload.
-5. Use official Oodle 2.9.10 / Kraken / Normal, 64 KiB blocks.
-6. Use the captured exact dev.24 LoM V12 clone as the container template.
-7. Keep clone filename, seven asset paths, physical entry offsets and index topology fixed.
-8. Use the **exact dev.24 route transformation** for `inner.cache`; do not hand-append the path.
-9. Keep the current official package manifest C unchanged unless runtime evidence proves otherwise.
-10. Keep A/local.cache unchanged.
-11. Installer must be transactional/fail-closed and retain rollback of the exact pre-test state.
-
-### Diagnostic font
-
-A small, very heavy Noto Sans ExtraBold-class TTF with verified Vietnamese diacritics is sufficient for this gate because Vietnamese translation is deliberately enabled. CJK coverage is desirable but not worth changing the fixed-slot/container strategy merely for the diagnostic.
-
-Final release typography is a separate decision after takeover is proven.
+4. Prefer a face with Vietnamese and CJK coverage to minimize fallback ambiguity.
+5. Preserve each stock `.ufont` wrapper/trailing asset bytes where applicable; replace only its embedded TTF payload.
+6. Use official Oodle 2.9.10 / Kraken / Normal, 64 KiB blocks.
+7. Use the captured exact dev.24 LoM V12 clone as the container template.
+8. Keep clone filename, seven asset paths, physical entry offsets and index topology fixed.
+9. Reuse/reconstruct the **exact dev.24 `inner.cache` route transformation** rather than hand-appending the path.
+10. Keep the current official package manifest C unchanged unless runtime evidence proves otherwise.
+11. Keep A/local.cache unchanged.
+12. Installer must be transactional/fail-closed and retain rollback of the exact pre-test state.
 
 ### Visual result reporting
 
-Do not report only “PASS/FAIL”. Record which surfaces become Bold:
+Do not report only “PASS/FAIL”. Record which surfaces visibly change weight/face:
 
 - Vietnamese body text;
 - small/legal/version text;
 - menu/title text;
 - character/name labels;
-- any untranslated CJK surface separately.
+- untranslated CJK surfaces separately.
 
-Expected decisive result:
+True historical first-success criterion:
 
-> If many Vietnamese/Latin surfaces become dramatically heavier, custom Font takeover is positively proven.
+> **At least one substantial in-game text surface must visibly render the deliberately different Bold face, with enough breadth to rule out a stock/fallback illusion.**
 
-If text remains visually stock, takeover did not occur. If some surfaces change and some do not, record the exact split before changing another variable.
+If many Vietnamese/Latin/CJK surfaces become dramatically heavier, alternate Font replacement is positively proven for the first time.
 
 ---
 
-## 14. Experiment discipline
+## 15. Experiment discipline
 
 1. Read this file first.
-2. Reconcile current GitHub `main`, stable manifest and latest live game state.
-3. One gate must answer one explicit decision.
-4. Do not rerun a resolved experiment unless a premise materially changed.
-5. A popup saying PASS is not runtime proof.
-6. Prefer latest clean live evidence over old markers/handoffs.
-7. Keep recovery controls available.
-8. **After every decisive live result, update this file before starting the next major gate.**
-9. Do not modify the stable channel while Font work is experimental.
+2. Read the LOCKED HISTORY section before interpreting old experiments.
+3. Reconcile current GitHub `main`, stable manifest and latest live game state.
+4. One gate must answer one explicit decision.
+5. Do not rerun a resolved experiment unless a premise materially changed.
+6. A popup saying PASS is not runtime proof.
+7. Prefer latest clean live evidence over old markers/handoffs.
+8. Keep recovery controls available.
+9. **After every decisive live result, update this file before starting the next major gate.**
+10. Do not modify the stable channel while Font work is experimental.
 
 Evidence order:
 
@@ -432,7 +505,7 @@ Evidence order:
 
 ---
 
-## 15. Recovery
+## 16. Recovery
 
 If Font state becomes ambiguous:
 
@@ -446,8 +519,8 @@ Do not delete arbitrary caches by guesswork.
 
 ---
 
-## 16. Next-session instruction
+## 17. Next-session instruction
 
 Begin with:
 
-> Read `docs/CURRENT_STATE.md` as authority. Reconcile current GitHub `main` and the owner's latest live game state. Do not repeat resolved/retracted experiments. Continue only the smallest unfinished step toward the **FULL-BOLD VISUAL TAKEOVER CONTROL**.
+> Read `docs/CURRENT_STATE.md` as authority, especially **LOCKED HISTORY**. Reconcile current GitHub `main` and the owner's latest live game state. Do not repeat resolved/retracted experiments. Continue only the smallest unfinished step toward the **FULL-BOLD VISUAL TAKEOVER CONTROL**.
