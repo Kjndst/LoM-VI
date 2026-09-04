@@ -1,0 +1,125 @@
+name: Temporary native bootstrap recon
+
+on:
+  push:
+    branches:
+      - build/native-bootstrap-recon-20260905
+    paths:
+      - '.github/workflows/tmp-native-bootstrap-recon.yml'
+      - 'channel/build/native-bootstrap-recon-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  recon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download exact upstream 2.2.9 release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/recon
+          cd /tmp/recon
+          curl --fail --location --retry 3 \
+            'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.2.9/lom-english-patch-data.zip' \
+            -o data.zip
+          curl --fail --location --retry 3 \
+            'https://github.com/Lani27/lord-of-mysteries-english-patch/releases/download/v2.2.9/Lord-of-Mysteries-English-Patch-2.2.exe' \
+            -o patcher.exe
+          test "$(stat -c '%s' data.zip)" = '16783086'
+          test "$(stat -c '%s' patcher.exe)" = '36662272'
+          echo '28705ea108d2d46094ad7e7b991e3b4dd0b8db884087e33a09e24741a5004389  data.zip' | sha256sum -c -
+          echo 'ab54b33f84d2e1c4fc6479d48a046b4efdb597da31d74e1f53bbb59fafe81800  patcher.exe' | sha256sum -c -
+
+      - name: Inventory upstream data payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/recon
+          unzip -l data.zip | tee data-list.txt
+          python3 - <<'PY' | tee data-interesting.txt
+          import hashlib, io, json, re, zipfile
+          z=zipfile.ZipFile('/tmp/recon/data.zip')
+          keys=('bootstrap','cpdd','manifest','modloader','loader','launch','nativescan','bridge')
+          print('=== INTERESTING ENTRIES ===')
+          for info in z.infolist():
+              low=info.filename.lower()
+              if any(k in low for k in keys):
+                  print(f'{info.file_size:9d} {hashlib.sha256(z.read(info)).hexdigest()} {info.filename}')
+          print('\n=== SMALL TEXT CONTENT ===')
+          for info in z.infolist():
+              low=info.filename.lower()
+              if info.file_size <= 120000 and any(k in low for k in keys) and low.endswith(('.lua','.json','.txt','.toml','.ini','.cfg','.md')):
+                  raw=z.read(info)
+                  try: txt=raw.decode('utf-8')
+                  except UnicodeDecodeError: continue
+                  print(f'\n----- {info.filename} ({len(raw)} bytes) -----')
+                  print(txt[:20000])
+          PY
+
+      - name: Inspect native patcher strings and embedded path evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/recon
+          PAT='CPDDTranslation|bootstrap|LOMModLoader|4660|LaunchStringExt|Saved[/\\]Mods|NativeScan|pakchunk|Content[/\\]Paks|journal|allocation|LuaFunctionLibrary|Launch[/\\]Base|manifest.lua'
+          {
+            echo '=== ASCII STRINGS ==='
+            strings -a -n 5 patcher.exe | grep -Eai -C 3 "$PAT" | head -n 4000 || true
+            echo
+            echo '=== UTF16-LE STRINGS ==='
+            strings -el -n 5 patcher.exe | grep -Eai -C 3 "$PAT" | head -n 2000 || true
+          } | tee patcher-strings.txt
+
+          python3 - <<'PY' | tee binary-needle-context.txt
+          import re
+          p='/tmp/recon/patcher.exe'
+          b=open(p,'rb').read()
+          needles=[
+            b'CPDDTranslation', b'bootstrap.lua', b'LOMModLoader', b'LaunchStringExt',
+            b'Saved\\Mods', b'Saved/Mods', b'NativeScan', b'LuaFunctionLibrary',
+            b'pakchunk', b'manifest.lua', b'4660', b'4,660', b'allocation', b'journal'
+          ]
+          print('=== ASCII NEEDLE OFFSETS ===')
+          for needle in needles:
+              start=0; count=0
+              while True:
+                  i=b.find(needle,start)
+                  if i<0: break
+                  count+=1
+                  lo=max(0,i-240); hi=min(len(b),i+len(needle)+400)
+                  c=b[lo:hi]
+                  printable=''.join(chr(x) if 32<=x<127 else '.' for x in c)
+                  print(f'NEEDLE={needle!r} OFFSET=0x{i:X} COUNT={count}')
+                  print(printable)
+                  start=i+1
+                  if count>=20: break
+          print('\n=== UTF16 NEEDLE OFFSETS ===')
+          for s in ['CPDDTranslation','bootstrap.lua','LOMModLoader','LaunchStringExt','Saved\\Mods','NativeScan','pakchunk','manifest.lua']:
+              needle=s.encode('utf-16le')
+              i=b.find(needle)
+              if i>=0:
+                  lo=max(0,i-480); hi=min(len(b),i+len(needle)+800)
+                  c=b[lo:hi]
+                  # render every other byte when plausible plus raw hex prefix
+                  print(f'NEEDLE={s!r} OFFSET=0x{i:X}')
+                  print(c[:256].hex())
+          PY
+
+      - name: Build compact recon artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/recon
+          mkdir -p artifact
+          cp data-list.txt data-interesting.txt patcher-strings.txt binary-needle-context.txt artifact/
+          sha256sum data.zip patcher.exe > artifact/UPSTREAM_SHA256.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-bootstrap-recon
+          path: /tmp/recon/artifact
+          if-no-files-found: error
