@@ -1,7 +1,7 @@
 # LoM-VI — Current State / Continuity Authority
 
 **Status:** ACTIVE LIVING AUTHORITY  
-**Last reconciled:** 2026-09-04 23:33 (+07)  
+**Last reconciled:** 2026-09-05 00:26 (+07)  
 **Repository:** `Kjndst/LoM-VI`
 
 > Read this file first, then `docs/FONT-BODY-BUILD-SEAL-2026-09-04.md` and `docs/HANDOFF-2026-09-04-DEV10-TO-PRODUCTION-FONT.md`. New clean live evidence overrides older speculation. Stable channel remains unchanged until production acceptance.
@@ -22,11 +22,15 @@ At this reconciliation:
 
 - Core `0.2.0.4`: available
 - Translation `2026.09.03.4`: available
-- Font `2026.09.04.1-dev`: `available=false`
+- Font `2026.09.04.1-dev`: `available=true`
 - game build target: `2018737`
-- sealed Font package: `font-2026.09.04.1-build2018737.zip`
-- sealed package SHA-256: `4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2`
-- manifest URL/SHA metadata are staged, but availability remains false until the exact binary is present and remotely reverified.
+- published Font package: `channel/font-2026.09.04.1-build2018737.zip`
+- package size: `47,643,492` bytes
+- package SHA-256: `4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2`
+- binary publication commit: `6bdcb1f50c2dd433e6d77c15413cf3af72741827`
+- dev availability commit: `cce80971be571b3b4e4c9fac5e66e6fbed241a43`
+
+The publication workflow downloaded the temporary source, required the exact size and SHA-256 above, required `unzip -t` to pass, reconciled current `main`, rechecked the staged manifest contract, and only then committed the binary. Git tree metadata confirms the published path and exact size. The development manifest now points to the GitHub copy and is enabled for the controlled live test.
 
 Stable remains untouched.
 
@@ -274,6 +278,10 @@ The previous blocker was physical Oodle slot fit after table-preserving SFNT con
 
 - size: `47,643,492` bytes
 - SHA-256: `4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2`
+- published path: `channel/font-2026.09.04.1-build2018737.zip`
+- Git blob: `d09a7915136c26efbf07702e20300224d61edb84`
+- publication workflow: PASS
+- development availability: ENABLED
 
 ### Sealed candidate PAK
 
@@ -358,24 +366,27 @@ Do not stack the sealed candidate on an unknown experimental state.
 
 Do not redesign patcher UX and do not reopen marker/font-topology experiments.
 
-Smallest unfinished gate is now:
+Publication and dev-channel enablement are complete. Smallest unfinished gate is now:
 
-> **Publish the exact sealed Body ZIP, verify remote identity, enable only the development Font component, then perform live C7 acceptance through patcher dev.10.**
+> **Perform controlled live C7 acceptance of the sealed Body package through patcher dev.10 on exact game build 2018737.**
 
 Exact order:
 
-1. upload the exact sealed bytes as `channel/font-2026.09.04.1-build2018737.zip`;
-2. download/re-read the published bytes and require SHA-256 `4e363da26fc09eb59e41e92abb5ee3f2e05aa9fdc96922fb993025a1d381a4a2`;
-3. only then set Font `available=true` in `channel/manifest-v3-dev.json`;
-4. keep stable manifest/payloads unchanged;
-5. establish a known-clean build-2018737 local baseline;
-6. install Font via dev.10;
-7. launch C7 and visually validate small/body text, Vietnamese diacritics, CJK preservation, width/overflow and absence of missing text;
-8. record Body live PASS or exact failure evidence;
-9. only after Body live PASS begin the four Title assets using Spectral SemiBold.
+1. establish a known-clean build-2018737 local baseline;
+2. confirm stock text renders before applying LoM-VI;
+3. install Font via dev.10 development channel;
+4. confirm the patcher downloads/applies `font-2026.09.04.1-build2018737.zip` without error;
+5. launch C7;
+6. visually validate small/body text, Vietnamese diacritics, CJK preservation, punctuation/symbol preservation, width/overflow and absence of missing/invisible text;
+7. specifically watch for any failure suggesting C7 rejection of the two Leviathan-compressed changed blocks;
+8. test `GỠ CÀI ĐẶT` and confirm clone removal + clean `inner.cache` restoration;
+9. record Body live PASS or exact failure evidence;
+10. only after Body live PASS begin the four Title assets using Spectral SemiBold.
+
+Do not promote to stable yet.
 
 ---
 
 ## 14. Next-session instruction
 
-> **Read `docs/CURRENT_STATE.md`, `docs/FONT-BODY-BUILD-SEAL-2026-09-04.md`, and `docs/HANDOFF-2026-09-04-DEV10-TO-PRODUCTION-FONT.md` as authority. Reconcile current GitHub state first. Patcher dev.10 remains the thin-client candidate; stable remains unchanged. The Body-only IBM Plex package is sealed and maintainer-validated but not live-accepted. Continue the smallest gate: publish the exact sealed ZIP, verify its remote SHA-256, set Font available only in `manifest-v3-dev.json`, then run the controlled build-2018737 live test. Do not recapture the clone, search C7 for Oodle, redesign UX, or begin Spectral Title before Body live PASS.**
+> **Read `docs/CURRENT_STATE.md`, `docs/FONT-BODY-BUILD-SEAL-2026-09-04.md`, and `docs/HANDOFF-2026-09-04-DEV10-TO-PRODUCTION-FONT.md` as authority. Reconcile current GitHub state first. Patcher dev.10 remains the thin-client candidate; stable remains unchanged. The exact Body-only IBM Plex package is sealed, maintainer-validated, published on `main`, and enabled only in `manifest-v3-dev.json`. Continue the smallest gate: establish a clean build-2018737 baseline and perform live Body acceptance through dev.10. Do not recapture the clone, search C7 for Oodle, redesign UX, begin Spectral Title, or promote stable before Body live PASS.**
