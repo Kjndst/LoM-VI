@@ -2,10 +2,8 @@ name: Temporary translation QC recon
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/tmp-translation-qc-recon.yml'
+    branches: [main]
+    paths: ['.github/workflows/tmp-translation-qc-recon.yml']
 
 permissions:
   contents: read
@@ -15,19 +13,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download and inspect current stable translation package
+      - name: Recon current stable translation and core
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/qc/pkg" "$RUNNER_TEMP/qc/report"
-          curl -fL --retry 3 'https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip' -o "$RUNNER_TEMP/qc/current.zip"
-          echo '33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70  '$RUNNER_TEMP'/qc/current.zip' | sha256sum -c -
-          unzip -q "$RUNNER_TEMP/qc/current.zip" -d "$RUNNER_TEMP/qc/pkg"
-          find "$RUNNER_TEMP/qc/pkg" -type f -printf '%P\t%s\n' | sort > "$RUNNER_TEMP/qc/report/file-list.txt"
-          cp -a "$RUNNER_TEMP/qc/pkg" "$RUNNER_TEMP/qc/report/extracted"
-
-          cat > "$RUNNER_TEMP/qc/targets.txt" <<'EOF'
-正在校验资源文件
+          mkdir -p /tmp/lomvi-qc/pkg /tmp/lomvi-qc/core /tmp/lomvi-qc/report
+          curl -fL --retry 3 https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip -o /tmp/lomvi-qc/translation.zip
+          echo '33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70  /tmp/lomvi-qc/translation.zip' | sha256sum -c -
+          unzip -q /tmp/lomvi-qc/translation.zip -d /tmp/lomvi-qc/pkg
+          curl -fL --retry 3 https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip -o /tmp/lomvi-qc/core.zip
+          echo '417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e  /tmp/lomvi-qc/core.zip' | sha256sum -c -
+          unzip -q /tmp/lomvi-qc/core.zip -d /tmp/lomvi-qc/core
+          cp -a /tmp/lomvi-qc/pkg /tmp/lomvi-qc/report/extracted
+          cp -a /tmp/lomvi-qc/core /tmp/lomvi-qc/report/core-extracted
+          find /tmp/lomvi-qc/pkg -type f -printf '%P\t%s\n' | sort > /tmp/lomvi-qc/report/file-list.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          roots=[Path('/tmp/lomvi-qc/pkg')]
+          targets='''正在校验资源文件
 登录账号
 服务器选择
 熔断说明
@@ -91,38 +94,33 @@ jobs:
 身前半径4米的圆形区域
 烈阳：身前半径5.6米的圆形区域
 半径为8米的圆形
-所有
 技能等级同时提升
 序列晋升
 血内阴影的伤害增加10%
 家族
-艺术学院
-EOF
-
-          : > "$RUNNER_TEMP/qc/report/target-hits.txt"
-          while IFS= read -r t; do
-            [ -z "$t" ] && continue
-            echo "===== $t =====" >> "$RUNNER_TEMP/qc/report/target-hits.txt"
-            grep -RFn --binary-files=without-match -- "$t" "$RUNNER_TEMP/qc/pkg" >> "$RUNNER_TEMP/qc/report/target-hits.txt" || true
-          done < "$RUNNER_TEMP/qc/targets.txt"
-
-          grep -RInP --binary-files=without-match '[\x{3400}-\x{9FFF}]' "$RUNNER_TEMP/qc/pkg" > "$RUNNER_TEMP/qc/report/all-cjk-lines.txt" || true
-          wc -l "$RUNNER_TEMP/qc/report/all-cjk-lines.txt" "$RUNNER_TEMP/qc/report/target-hits.txt" > "$RUNNER_TEMP/qc/report/counts.txt"
-
-      - name: Inspect runtime/core matching behavior
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fL --retry 3 'https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/core-0.2.0.4.zip' -o "$RUNNER_TEMP/qc/core.zip"
-          echo '417720646328ec9aa7a031b6e024bdc82005618afddedcbbced5b49d27ae844e  '$RUNNER_TEMP'/qc/core.zip' | sha256sum -c -
-          mkdir -p "$RUNNER_TEMP/qc/core"
-          unzip -q "$RUNNER_TEMP/qc/core.zip" -d "$RUNNER_TEMP/qc/core"
-          cp -a "$RUNNER_TEMP/qc/core" "$RUNNER_TEMP/qc/report/core-extracted"
-          grep -RInE --binary-files=without-match 'IdOverrides|SafeLiterals|UiLiterals|NativeScan|literal|override|hook|Text|SetText|GetText|Register|module' "$RUNNER_TEMP/qc/core" > "$RUNNER_TEMP/qc/report/core-routing-hits.txt" || true
-
+艺术学院'''.splitlines()
+          files=[]
+          for root in roots:
+              for p in root.rglob('*'):
+                  if p.is_file():
+                      try: txt=p.read_text(encoding='utf-8')
+                      except Exception: continue
+                      files.append((p,txt))
+          out=[]
+          for t in targets:
+              out.append(f'===== {t} =====')
+              hit=False
+              for p,txt in files:
+                  for i,line in enumerate(txt.splitlines(),1):
+                      if t in line:
+                          out.append(f'{p.relative_to(roots[0])}:{i}: {line}')
+                          hit=True
+              if not hit: out.append('(NO_HIT)')
+          Path('/tmp/lomvi-qc/report/target-hits.txt').write_text('\n'.join(out),encoding='utf-8')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: translation-qc-recon-20260905
-          path: ${{ runner.temp }}/qc/report
+          path: /tmp/lomvi-qc/report
           retention-days: 1
           if-no-files-found: error
