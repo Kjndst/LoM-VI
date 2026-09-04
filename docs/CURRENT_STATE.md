@@ -1,7 +1,7 @@
 # LoM-VI — Current State / Continuity Authority
 
 **Status:** ACTIVE LIVING AUTHORITY  
-**Last reconciled:** 2026-09-04 (+07), after FULL-BOLD r8 live proof  
+**Last reconciled:** 2026-09-04 (+07), after FULL-BOLD r9 live result and post-test Việt hóa installer interaction  
 **Repository:** `Kjndst/LoM-VI`
 
 > Read this file before continuing development. New clean live evidence overrides older handoffs/speculation. After every decisive live result, update this file before starting the next major Font gate.
@@ -66,40 +66,42 @@ Operationally the proven route is:
 
 Do not return to A+B+C, direct-PAK-only testing, or hand-appending a path to clean `inner.cache` unless a premise materially changes.
 
-### 2.3 Alternate Font rendering is now positively proven
+### 2.3 Alternate Font rendering is positively proven
 
-The previous statement “LoM-VI has never positively rendered an alternate font” is **RETRACTED by newer live evidence**.
+The old statement “LoM-VI has never positively rendered an alternate font” is retracted by live evidence.
 
-Live FULL-BOLD controls produced unmistakable non-stock pixels:
-
-- **r2** — version digits on the loading screen rendered in an unmistakably heavy replacement face while most other text disappeared;
-- **r8** — multiple CJK/text positions visibly rendered deliberate diagnostic `W` glyphs, including prefixes adjacent to the version digits.
+- **r2** rendered loading version digits in an unmistakably heavy replacement face.
+- **r8** rendered deliberate diagnostic `W` glyphs at multiple CJK/text positions, including immediately beside the version digits.
 
 Therefore:
 
 > **Alternate Font takeover/rendering is positively proven on the current game build.**
 
-This proves route + wrapper/container + TrueType rasterization can work. It does **not** yet mean production-ready full Vietnamese/CJK coverage is solved.
+This proves route + wrapper/container + TrueType rasterization can work. It does **not** mean production-ready Vietnamese/CJK coverage is solved.
 
 ### 2.4 MVH remains structural reference only
 
-Mê Việt Hóa is useful for structure, packaging, compression and historical installer behavior, but it is not a current runtime oracle. Direct `_P.pak` tests on the current build did not provide positive MVH takeover proof.
+Mê Việt Hóa remains useful for structure, packaging, compression and historical installer behavior, but it is not a current runtime oracle. Direct `_P.pak` tests on the current build did not provide positive MVH takeover proof.
 
 ---
 
 ## 3. Current blocker
 
-The blocker is no longer “can a different Font render?”. That is solved.
+The blocker is no longer route, Oodle, or “can another Font render?”. Those questions are closed unless new evidence materially changes a premise.
 
 Current blocker:
 
-> **Build a real-glyph Vietnamese + CJK TrueType subset that stays inside the accepted cmap/glyph/runtime envelope demonstrated by r8.**
+> **Newly added real TrueType glyphs do not rasterize even though the same CJK codepoints render when mapped to an existing proven glyph.**
 
-The next live gate is **r9 — REAL-CJK SAFE SUBSET**.
+The smallest next question is whether the failure belongs to the converted Noto CJK outlines/metrics specifically, or to adding new glyph IDs/table integration generally.
+
+The next live gate is:
+
+> **r10 — SIMPLE-CJK-GLYPHS CONTROL**
 
 ---
 
-## 4. Exact recipe capture authority
+## 4. Exact B/C recipe capture authority
 
 Artifact:
 
@@ -178,7 +180,7 @@ Known encoded-entry offsets:
 
 `0, 572, 1144, 1512, 1880, 2248, 2388`
 
-Current experimental discipline is to preserve clone filename, all seven asset paths, fixed physical slots, encoded-entry slots, path-hash/full-directory topology, official C and A/local.cache. Only the Font payload/header and required encoded entry fields may change.
+Preserve clone filename, seven asset paths, fixed physical slots, encoded-entry slots, path-hash/full-directory topology, official C and A/local.cache. Only Font payload/header and required encoded-entry fields may change.
 
 ---
 
@@ -186,53 +188,45 @@ Current experimental discipline is to preserve clone filename, all seven asset p
 
 ### r1 — full Noto CJK Bold
 
-Installer failed closed before runtime mutation because `Aleo_Regular_Update` compressed data did not fit the fixed physical slot.
-
-Interpretation: build constraint only; no runtime conclusion.
+Installer failed closed before runtime mutation because `Aleo_Regular_Update` compressed data did not fit its fixed physical slot.
 
 ### r2 — compact Black TrueType positive control
 
 - TrueType `glyf` payload;
-- all seven Aleo assets replaced with the same diagnostic face;
+- all seven Aleo assets replaced by the same diagnostic face;
 - exact dev.24 route/template retained.
 
-Live result:
-
-- most title/loading text disappeared;
-- loading version `1.2018737.2097705` visibly rendered in a dramatically heavier replacement face.
+Live result: most text disappeared, but loading version `1.2018737.2097705` visibly rendered in a dramatically heavier replacement face.
 
 **First positive alternate-font render proof.**
 
-### r3 — CJK+VI CFF/OTF attempt
+### r3 — CJK+VI CFF/OTF
 
 Live result: all text disappeared, including version digits.
 
-Interpretation: CFF/OTF path was rejected or otherwise failed; do not use it as the production direction.
+Interpretation: CFF/OTF is not the viable direction.
 
 ### r4 — TTF/glyf CJK+VI canary
 
-Live result:
+Live result: version digits returned; a few special/replacement characters appeared.
 
-- version digits returned;
-- a few special/replacement characters appeared.
+Interpretation: TTF/glyf is the viable direction.
 
-Interpretation: return to TTF/glyf was decisive. TTF/glyf is the supported direction.
+### r5 — very large CJK cmap, many codepoints → one `W`
 
-### r5 — all-CJK many-codepoints → one `W` glyph
+Live result: visible glyphs disappeared, but layout/line height remained.
 
-Live result: visible text disappeared, but text layout/line height remained — an invisible glyph/layout state rather than the earlier fully absent layout.
+### r6 — reduced GB2312 cmap, many codepoints → one `W`
 
-### r6 — reduced GB2312 cmap, still many-codepoints → one `W`
+Live result: same invisible-glyph/layout state.
 
-Live result: same invisible glyph/layout state.
+Interpretation: failure is not explained solely by r5's huge cmap.
 
-Interpretation: failure is not explained solely by the huge ~31k r5 cmap.
+### r7 — unique physical glyph IDs at high complexity
 
-### r7 — unique physical glyph IDs
+Live result: no meaningful change from r6; still invisible-glyph/layout state.
 
-Live result: no meaningful change from r6; still invisible glyph/layout state.
-
-Interpretation: one-glyph aliasing is not the primary blocker.
+Interpretation: many-codepoints→one-glyph aliasing is not the primary blocker.
 
 ### r8 — CMAP4095 threshold control — **POSITIVE PASS**
 
@@ -241,101 +235,142 @@ Construction:
 - same r2 TrueType/glyf base;
 - `3316` physical glyphs;
 - exactly `4095` Unicode cmap mappings;
-- r2's original `2840` mappings unchanged;
-- `1255` additional codepoints deliberately mapped to `W`.
+- original r2 `2840` mappings unchanged;
+- exact `1255` extra CJK codepoints mapped to existing proven `W` glyph.
 
 Live result:
 
-- version digits rendered again;
-- many deliberate `W` glyphs visibly appeared at CJK/text positions, including strings immediately adjacent to the version number.
+- version digits rendered;
+- deliberate `W` glyphs rendered at many CJK/text positions.
 
-This is broad positive proof that:
+This proves:
 
-1. the dev.24 route/template is valid for alternate Font rendering;
-2. TTF/glyf rasterization is valid;
-3. CJK-range codepoints can flow through the runtime cmap path;
-4. the r5/r6/r7 failures are strongly associated with Font/cmap/glyph complexity above the r8-safe shape, not with route failure.
+1. dev.24 route/template works for alternate Font rendering;
+2. TTF/glyf rasterization works;
+3. CJK-range codepoints flow through the runtime cmap path;
+4. `4095` is a live-proven safe control point under this construction;
+5. `~10k` mappings failed in tested constructions.
 
-Do **not** claim `4095` is a mathematically exact hard maximum yet. It is the current proven-safe control point; `~10k` mappings is a proven failure point under the tested constructions.
+Do not claim 4095 is a mathematically exact universal maximum.
 
----
-
-## 7. Current live machine state
-
-At the time of this authority update:
-
-> **r8 is installed and is the current positive live checkpoint.**
-
-Do not stack r9 on top of r8.
-
-Before r9 live test:
-
-1. close the game;
-2. run the r8 EXE a second time;
-3. require exact rollback success to the pre-r8 state;
-4. only then run r9 once;
-5. launch the game and capture loading + main/login UI.
-
-If rollback refuses or reports a hash/precondition mismatch, stop and preserve evidence; do not manually delete caches.
-
----
-
-## 8. r9 — REAL-CJK SAFE SUBSET candidate
-
-r9 is built but **not live-tested yet**.
-
-Goal: keep r8's known-good mapping budget and replace the deliberate `W` aliases with real heavy CJK outlines, changing the smallest possible variable.
+### r9 — REAL-CJK SAFE SUBSET — **PARTIAL FAIL / IMPORTANT ISOLATION**
 
 Construction:
 
-- base: exact r2 diagnostic TrueType/glyf font;
-- r8 cmap codepoint set retained **exactly**: `4095` mappings;
-- original r2 `2840` mappings retained unchanged;
-- the exact `1255` codepoints added by r8 are retained;
-- instead of mapping those 1255 codepoints to `W`, each receives its own real glyph outline;
-- source outlines: **Noto Sans CJK SC Bold**;
-- source CFF outlines are converted to quadratic TrueType `glyf` outlines at `1000 UPEM`;
-- total glyph count: `4571`;
-- raw TTF size: `771,032` bytes;
-- all tested glyphs such as `诡秘之主`, `欢迎回来`, `切换账号`, `游戏`, `设置`, `版本` have non-empty real outlines;
-- exact r8 installer/route/inner.cache/Oodle/7-Aleo/fixed-slot logic retained.
+- exact same `4095` mapping set as r8;
+- original r2 `2840` mappings retained;
+- exact same `1255` additional CJK codepoints retained;
+- instead of mapping those codepoints to existing `W`, each codepoint received its own newly added real CJK glyph;
+- source: Noto Sans CJK SC Bold CFF converted to quadratic TrueType `glyf` at 1000 UPEM;
+- total glyph count `4571`;
+- raw TTF `771,032` bytes;
+- Font SHA-256 `624fa0c0e5c7728d4ad6c0691e749cdb868ad5b1b8c005ef2d4eb9c897c619a8`;
+- EXE SHA-256 `f5763867b0ae6edf11e277c4018f6524589859e400de1bb3f8507c21b88ba1da`.
 
-Font SHA-256:
+Live result from owner:
 
-`624fa0c0e5c7728d4ad6c0691e749cdb868ad5b1b8c005ef2d4eb9c897c619a8`
+- loading version digits still rendered;
+- real CJK glyphs did **not** visibly render;
+- unlike r8, no diagnostic CJK `W` markers appeared.
 
-Fixed embedded Font slot:
+Interpretation:
 
-- offset `5,630,592`
-- length `1,591,424`
-- padded-slot SHA-256 `15e580ab0099d1dd6933b69a5c179bb61e0a47e4ac25b96f3c6d59e0389b5e3b`
+> **The 4095-mapping/codepoint route itself is still alive. The failure is narrowed to newly added glyph identities/outlines/metrics/table integration, not route or cmap budget.**
 
-Candidate EXE:
-
-`LoM-VI-Full-Bold-Visual-Takeover-Control-r9-REAL-CJK-SAFE.exe`
-
-EXE SHA-256:
-
-`f5763867b0ae6edf11e277c4018f6524589859e400de1bb3f8507c21b88ba1da`
-
-Binary diff against r8 is restricted to:
-
-- the 64-byte fixed-slot SHA self-check;
-- the same-length diagnostic label;
-- the fixed embedded Font slot.
-
-No stable-channel file is modified.
-
-### r9 decision table
-
-- **Real Chinese glyphs + version digits render** → real CJK path is proven within r8-safe cmap shape; proceed to production subset planning and Vietnamese visual validation.
-- **Version renders but some CJK is missing** → inspect only the missing codepoint set/coverage; route remains closed as solved.
-- **All text returns to invisible-layout state** → r8-safe mapping count alone is insufficient; binary-search glyph-count/outline complexity while preserving the exact 4095 mapping set.
-- **Asset disappears without retained layout** → treat as a stronger Font rejection and compare r8↔r9 Font tables; do not reopen route/Oodle diagnostics.
+The strongest comparison is r8 vs r9: the same CJK codepoints render when they target an existing proven glyph, but fail when they target newly added converted real glyphs.
 
 ---
 
-## 9. Resolved conclusions / do not repeat
+## 7. Post-r9 Việt hóa pack interaction — separate issue
+
+After observing r9, the owner installed the current Việt hóa pack as an additional test.
+
+Observed:
+
+- pack uninstall/remove did not work;
+- after that install, game text became full Chinese/stock-looking again.
+
+This changes the effective runtime state, so the machine is **not a clean r9 checkpoint anymore**.
+
+Do not infer without evidence that stable `channel/manifest.json` directly rewrites `inner.cache`: the stable manifest currently declares managed roots only under `Saved/Mods/...` for Core/Translation and the stable `pakchunk99999...VN_FONT_P.pak` for Font. The exact installer side effect that neutralized the experimental route has not yet been isolated.
+
+Treat the uninstall failure as a **separate patcher/uninstaller bug**. Record it, but do not broaden the current Font gate into patcher repair unless the owner explicitly changes priority.
+
+---
+
+## 8. Current live machine state — IMPORTANT
+
+Current state after the owner's post-r9 pack install is:
+
+> **AMBIGUOUS / STOCK-LOOKING: full Chinese renders; stable pack removal failed.**
+
+Therefore:
+
+- do **not** assume r9 is still installed cleanly;
+- do **not** use “run r9 a second time to rollback” as the default recovery;
+- do **not** stack r10 on this ambiguous state.
+
+Before the next Font gate, establish a clean baseline with official recovery.
+
+Required pre-r10 recovery:
+
+1. close the game;
+2. do not manually delete arbitrary caches;
+3. run official GMZZLauncher **Verify/Repair**;
+4. launch once;
+5. confirm stock/full Chinese plus normal small/legal/version text visibly renders;
+6. close the game;
+7. only then run r10 once.
+
+The immediate r10 gate is intentionally **Font-mechanics-only**. Do not reinstall the stable Việt hóa pack during this gate. Translation/Core will be re-integrated only after newly added glyph rendering is understood, so installer side effects do not contaminate the Font decision.
+
+---
+
+## 9. r10 — SIMPLE-CJK-GLYPHS CONTROL — built, not live-tested
+
+Purpose: distinguish **bad converted Noto outlines/metrics** from **new-glyph/table integration failure**.
+
+Construction:
+
+- start from r9;
+- preserve exactly `4095` cmap mappings;
+- preserve r9's `4571` total physical glyph count;
+- preserve the same 1255 new CJK glyph IDs/codepoint assignments;
+- replace every new CJK glyph outline with an extremely simple TrueType rectangle;
+- each new glyph has its own physical glyph identity;
+- simple metrics: advance `1000`, left side bearing `120`;
+- rectangle coordinates: `(120,80) → (880,80) → (880,820) → (120,820)`;
+- route, dev.24 captured `inner.cache`, seven Aleo assets, Oodle path, fixed physical slots and container topology remain unchanged.
+
+r10 Font:
+
+- raw TTF size `583,820` bytes;
+- SHA-256 `34265a6b0b27982d947f79bff845b3ecd1691b98779e3902ed248815996681d3`;
+- padded fixed-slot SHA-256 `5c68a4f03499b1f499bd846a61f8c9d8afe41a7640060b12a66ed8e69d0623af`.
+
+Candidate EXE:
+
+`LoM-VI-Full-Bold-Visual-Takeover-Control-r10-SIMPLE-CJK-GLYPHS.exe`
+
+EXE SHA-256:
+
+`bac01e0286aece48bb8ecfce28739e2969150cb9a1ba559fd5b1095d97f895ce`
+
+Binary diff versus r9 is restricted to:
+
+- fixed embedded Font slot;
+- fixed-slot SHA self-check;
+- same-length diagnostic label.
+
+### r10 decision table
+
+- **Version digits render + many solid blocks appear at former CJK positions** → new glyph IDs/table integration is viable; r9's converted Noto glyph construction/outlines/metrics are the culprit. Next gate should rebuild real CJK glyphs using a safer TrueType-native construction.
+- **Version digits render but all new block glyphs remain invisible** → outline complexity is not the cause; investigate newly appended glyph/table integration (glyph order, loca/glyf/maxp/hmtx/cmap table relationships) while preserving exact route and mapping set.
+- **Version digits also disappear** → stronger font rejection; compare r9/r10 table structure, but still do not reopen route/Oodle diagnostics unless clean control evidence demands it.
+
+---
+
+## 10. Resolved conclusions / do not repeat
 
 - PAK-only is not a demonstrated current Font takeover solution.
 - A/local.cache is not required by the captured working recipe.
@@ -344,32 +379,33 @@ No stable-channel file is modified.
 - Official Oodle 2.9.10 is not inherently incompatible.
 - Missing text alone is not positive proof.
 - Stock clone PASS is not alternate-font proof.
-- **Alternate-font proof now exists via r2 and especially r8.**
+- **Alternate-font proof exists via r2 and especially r8.**
 - TTF/glyf is the current viable Font direction; CFF/OTF is not.
-- Many-codepoints→one-glyph aliasing was tested and is not the main explanation.
-- Unique physical glyph IDs alone did not cure the high-complexity failure.
-- `4095` mappings is a live-proven safe control; `~10k` mappings failed in tested variants.
-- Do not modify the stable channel while Font work remains experimental.
+- CJK codepoint/cmap flow is positively proven by r8.
+- Many-codepoints→one-glyph aliasing is not the main explanation.
+- Unique physical glyph IDs alone did not cure high-complexity r7.
+- `4095` mappings is a live-proven safe control under r8; `~10k` failed in tested variants.
+- r9 proves mapping count alone is insufficient: newly added real glyphs can fail while existing proven glyphs still render.
+- Do not modify stable channel while Font work remains experimental.
+- Do not use the stable Việt hóa pack as part of the immediate r10 mechanical gate; its post-r9 install changed effective runtime state and its uninstall failed.
 
 ---
 
-## 10. Recovery
+## 11. Recovery
 
-If experimental state becomes ambiguous:
+If experimental state is ambiguous:
 
-1. prefer the experiment EXE's exact transactional rollback when its own preconditions still match;
-2. otherwise quarantine known LoM-VI experimental custom PAKs;
-3. run official GMZZLauncher Verify/Repair;
-4. launch once;
-5. confirm stock small/legal/version text visibly renders;
-6. only then begin another clean gate.
+1. if an experiment's own exact rollback preconditions still unquestionably match, transactional rollback is preferred;
+2. otherwise use official GMZZLauncher Verify/Repair;
+3. launch once and confirm stock small/legal/version text plus normal Chinese rendering;
+4. only then begin another clean gate.
 
 Do not delete arbitrary caches by guesswork.
 
 ---
 
-## 11. Next-session instruction
+## 12. Next-session instruction
 
 Begin with:
 
-> Read `docs/CURRENT_STATE.md` as authority. Reconcile current GitHub `main` and stable manifest. Treat r8 as the first broad positive Font takeover proof. Do not reopen route/Oodle diagnostics. Current live state is r8 installed unless newer owner evidence says otherwise. The smallest unfinished gate is r9 REAL-CJK SAFE SUBSET: rollback r8 exactly, install r9, and report real CJK / version / Vietnamese surfaces separately.
+> Read `docs/CURRENT_STATE.md` as authority. Reconcile GitHub `main` and stable manifest. Treat r8 as broad positive Font takeover proof and r9 as proof that the remaining blocker lies in newly added glyph construction/table integration, not route/cmap budget. Current live machine state is ambiguous/stock-looking after a Việt hóa pack install whose uninstall failed. Do not run r9 rollback by default. First official Verify/Repair to a clean stock baseline, then run the smallest unfinished gate: r10 SIMPLE-CJK-GLYPHS. Do not reopen route/Oodle diagnostics and do not reinstall the stable Việt hóa pack during r10.
