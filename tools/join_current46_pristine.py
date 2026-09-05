@@ -158,7 +158,7 @@ def main() -> None:
         json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     print(json.dumps(result, ensure_ascii=False))
-    if missing_chunks:
+    if missing_chunks or failed_exec:
         raise SystemExit(2)
 
 
