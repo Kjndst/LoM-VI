@@ -1,7 +1,7 @@
 {
   "schema": "lomvi.thin.v3",
   "channel": "stable",
-  "published_at": "2026-09-05T04:47:00+07:00",
+  "published_at": "2026-09-07T06:46:00+07:00",
   "patcher": {
     "minimum_version": "0.3.0"
   },
@@ -13,10 +13,10 @@
     "archive_root": "game"
   },
   "translation": {
-    "version": "2026.09.03.4",
+    "version": "2026.09.07.1",
     "available": true,
-    "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.03.4.zip",
-    "sha256": "33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70",
+    "url": "https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.07.1.zip",
+    "sha256": "bf55ec014a4df2e81940a7bf239930be1193dbd1baa751f4f77d9ac6c55cda42",
     "archive_root": "game"
   },
   "font": {

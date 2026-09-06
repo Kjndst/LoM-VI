@@ -3,10 +3,10 @@
 Public thin-client payload channel for Lord of Mysteries – Việt Hóa.
 
 Current live candidate:
-- Launcher: 0.2.0-dev.5+
+- Launcher: 0.3.0+
 - Core: 0.2.0.4
-- Translation: 2026.09.03.3
-- VN Font: 2026.09.03.1
+- Translation: 2026.09.07.1
+- VN Font: 2026.09.05.1
 
 Final VN Font game filename:
 `Content/Paks/pakchunk99999-Windows_999999_VN_FONT_P.pak`
