@@ -1,0 +1,99 @@
+name: R15 final transfer airlock
+
+on:
+  push:
+    branches: [test/r15-translation]
+    paths:
+      - '.github/workflows/r15-final-transfer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test/r15-translation
+
+      - name: Download and discover final artifact
+        shell: bash
+        env:
+          SHARE_URL: https://firestorage.ai/ja/f/_cF9atQZUONX
+          EXPECTED_SHA: bf55ec014a4df2e81940a7bf239930be1193dbd1baa751f4f77d9ac6c55cda42
+          EXPECTED_SIZE: '4939684'
+        run: |
+          set -euo pipefail
+          mkdir -p .transfer
+          curl -fsSL --retry 3 --retry-delay 2 "$SHARE_URL" -o .transfer/share.bin
+
+          verify() {
+            local f="$1"
+            [ -f "$f" ] || return 1
+            local size sha
+            size=$(stat -c '%s' "$f")
+            sha=$(sha256sum "$f" | awk '{print $1}')
+            echo "candidate=$f size=$size sha=$sha"
+            [ "$size" = "$EXPECTED_SIZE" ] && [ "$sha" = "$EXPECTED_SHA" ] && unzip -t "$f" >/dev/null
+          }
+
+          if verify .transfer/share.bin; then
+            mv .transfer/share.bin .transfer/final.zip
+            exit 0
+          fi
+
+          python3 - <<'PY' > .transfer/urls.txt
+          import re, html
+          raw=open('.transfer/share.bin','rb').read().decode('utf-8','ignore')
+          raw=html.unescape(raw)
+          urls=[]
+          for pat in [r'https?://[^"\'<>\\\s]+', r'(?:href|src)=["\']([^"\']+)["\']']:
+              urls += re.findall(pat, raw)
+          seen=[]
+          for u in urls:
+              if isinstance(u, tuple): u=u[0]
+              if u not in seen:
+                  seen.append(u)
+          for u in seen:
+              print(u)
+          PY
+
+          echo 'Discovered URLs:'
+          sed -n '1,120p' .transfer/urls.txt
+
+          n=0
+          while IFS= read -r u; do
+            case "$u" in
+              /*) u="https://firestorage.ai$u" ;;
+            esac
+            case "$u" in
+              http://*|https://*) ;;
+              *) continue ;;
+            esac
+            n=$((n+1))
+            out=".transfer/candidate-$n.bin"
+            if curl -fsSL --retry 2 "$u" -o "$out"; then
+              if verify "$out"; then
+                mv "$out" .transfer/final.zip
+                exit 0
+              fi
+            fi
+          done < .transfer/urls.txt
+
+          echo 'No verified artifact could be obtained from share page.' >&2
+          exit 42
+
+      - name: Install verified artifact in test channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .transfer/final.zip channel/translation-2026.09.07.1.zip
+          sha256sum channel/translation-2026.09.07.1.zip
+          unzip -l channel/translation-2026.09.07.1.zip
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add channel/translation-2026.09.07.1.zip
+          git commit -m 'build: stage translation 2026.09.07.1' || true
+          git push origin HEAD:test/r15-translation
