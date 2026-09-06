@@ -1,0 +1,58 @@
+name: R15 transfer probe
+
+on:
+  push:
+    branches: [test/r15-translation]
+    paths:
+      - '.github/workflows/r15-transfer-probe.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test/r15-translation
+      - name: Probe public share page
+        shell: bash
+        env:
+          SHARE_URL: https://firestorage.ai/ja/f/_cF9atQZUONX
+        run: |
+          set -euo pipefail
+          mkdir -p .probe
+          curl -sSL --retry 2 -D .probe/headers.txt "$SHARE_URL" -o .probe/body.bin || true
+          {
+            echo '=== HEADERS ==='
+            sed -n '1,160p' .probe/headers.txt 2>/dev/null || true
+            echo '=== BODY META ==='
+            stat -c 'size=%s' .probe/body.bin 2>/dev/null || true
+            sha256sum .probe/body.bin 2>/dev/null || true
+            file .probe/body.bin 2>/dev/null || true
+            echo '=== URLS ==='
+            python3 - <<'PY'
+          import re, html, os
+          raw=open('.probe/body.bin','rb').read().decode('utf-8','ignore') if os.path.exists('.probe/body.bin') else ''
+          raw=html.unescape(raw)
+          found=[]
+          patterns=[r'https?://[^"\'<>\\\s]+',r'(?:href|src)=["\']([^"\']+)["\']',r'(/api/[^"\'<>\\\s]+)',r'(/[^"\'<>\\\s]*(?:download|file)[^"\'<>\\\s]*)']
+          for pat in patterns:
+              for u in re.findall(pat,raw):
+                  if isinstance(u,tuple): u=u[0]
+                  if u not in found: found.append(u)
+          for u in found[:300]: print(u)
+          PY
+            echo '=== BODY TEXT HEAD ==='
+            python3 - <<'PY'
+          import os
+          raw=open('.probe/body.bin','rb').read().decode('utf-8','ignore') if os.path.exists('.probe/body.bin') else ''
+          print(raw[:12000])
+          PY
+          } > channel/r15-transfer-probe.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add channel/r15-transfer-probe.txt
+          git commit -m 'test: capture R15 transfer probe'
+          git push origin HEAD:test/r15-translation
