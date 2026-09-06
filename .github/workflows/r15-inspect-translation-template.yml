@@ -18,7 +18,7 @@ jobs:
         with:
           ref: test/r15-translation
           fetch-depth: 0
-      - name: Extract stable translation template and schema samples
+      - name: Extract stable translation template and structural diagnostics
         shell: bash
         run: |
           set -euo pipefail
@@ -27,6 +27,7 @@ jobs:
           OUT="$GITHUB_WORKSPACE/channel/build/r15-template"
           INV="$GITHUB_WORKSPACE/channel/build/r15-template-inventory.txt"
           SAMPLE="$GITHUB_WORKSPACE/channel/build/r15-template-samples.txt"
+          STRUCT="$GITHUB_WORKSPACE/channel/build/r15-template-structure.txt"
           rm -rf "$WORK" "$OUT"
           mkdir -p "$WORK" "$OUT"
           unzip -q "$SRC" -d "$WORK"
@@ -41,9 +42,9 @@ jobs:
           done < <(find "$WORK" -type f -print0 | sort -z)
           echo "Stable ZIP:" >> "$INV"
           sha256sum "$SRC" >> "$INV"
-          python3 - "$WORK" "$SAMPLE" <<'PY'
-          import os, sys, re
-          root, out = sys.argv[1:]
+          python3 - "$WORK" "$SAMPLE" "$STRUCT" <<'PY'
+          import os, sys, re, collections
+          root, out, struct = sys.argv[1:]
           rels = [
               'game/Saved/Mods/lua/mods/lom_vi/IdOverrides.lua',
               'game/Saved/Mods/lua/mods/lom_vi/SafeLiterals.lua',
@@ -54,27 +55,49 @@ jobs:
                   p=os.path.join(root,*rel.split('/'))
                   raw=open(p,encoding='utf-8',newline='').read()
                   lines=raw.splitlines()
-                  o.write(f'===== {rel} =====\n')
-                  o.write(f'chars={len(raw)} lines={len(lines)}\n')
+                  o.write(f'===== {rel} =====\nchars={len(raw)} lines={len(lines)}\n')
                   o.write('FIRST_LINES:\n')
                   for line in lines[:20]: o.write(repr(line[:1200])+'\n')
                   o.write('LAST_LINES:\n')
                   for line in lines[-20:]: o.write(repr(line[:1200])+'\n')
-                  o.write('PATTERN_COUNTS:\n')
-                  for pat in [r'^return', r'^local', r'^\s*\[', r'^\s*[A-Za-z_]+\s*=']:
-                      o.write(f'{pat}: {sum(bool(re.search(pat,x)) for x in lines)}\n')
                   o.write('\n')
+          p=os.path.join(root,'game/Saved/Mods/lua/mods/lom_vi/IdOverrides.lua')
+          lines=open(p,encoding='utf-8').read().splitlines()
+          with open(struct,'w',encoding='utf-8') as o:
+              o.write('NON_NUMERIC_STRUCTURAL_LINES\n')
+              for i,line in enumerate(lines,1):
+                  s=line.strip()
+                  if not s: continue
+                  if re.match(r'^\[\d+\]\s*=',s): continue
+                  if re.match(r'^--',s): continue
+                  # emit table boundaries/module labels/non-numeric keys only
+                  if s in {'return {','},','}'} or re.match(r'^[A-Za-z_][A-Za-z0-9_]*\s*=\s*\{',s) or re.match(r'^\[".*"\]\s*=\s*\{',s):
+                      o.write(f'{i}: {line[:1600]}\n')
+              o.write('\nSECTION_COUNTS\n')
+              section='root'; counts=collections.Counter(); modules=[]
+              for line in lines:
+                  s=line.strip()
+                  m=re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*\{',s)
+                  if m:
+                      section=m.group(1)
+                  mm=re.match(r'^\["(.*)"\]\s*=\s*\{',s)
+                  if mm:
+                      modules.append(mm.group(1)); section='module:'+mm.group(1)
+                  if re.match(r'^\[\d+\]\s*=',s): counts[section]+=1
+              for k,v in counts.items(): o.write(f'{k}\t{v}\n')
+              o.write(f'MODULES={len(modules)}\n')
+              for m in modules: o.write('MODULE\t'+m+'\n')
           PY
-      - name: Commit template diagnostics to test branch
+      - name: Commit diagnostics to test branch
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '418982+github-actions[bot]@users.noreply.github.com'
-          git add channel/build/r15-template channel/build/r15-template-inventory.txt channel/build/r15-template-samples.txt
+          git add channel/build/r15-template channel/build/r15-template-inventory.txt channel/build/r15-template-samples.txt channel/build/r15-template-structure.txt
           if git diff --cached --quiet; then
             echo 'Diagnostics already current.'
             exit 0
           fi
-          git commit -m 'test: inspect stable translation Lua schema for R15'
+          git commit -m 'test: inspect stable override structure for R15'
           git push origin HEAD:test/r15-translation
