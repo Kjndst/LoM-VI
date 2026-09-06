@@ -18,16 +18,29 @@ jobs:
         with:
           ref: test/r15-translation
 
-      - name: Download and discover final artifact
+      - name: Probe transfer and verify final artifact
+        id: transfer
+        continue-on-error: true
         shell: bash
         env:
           SHARE_URL: https://firestorage.ai/ja/f/_cF9atQZUONX
           EXPECTED_SHA: bf55ec014a4df2e81940a7bf239930be1193dbd1baa751f4f77d9ac6c55cda42
           EXPECTED_SIZE: '4939684'
         run: |
-          set -euo pipefail
+          set -u
           mkdir -p .transfer
-          curl -fsSL --retry 3 --retry-delay 2 "$SHARE_URL" -o .transfer/share.bin
+          : > .transfer/diagnostic.txt
+          echo "expected_size=$EXPECTED_SIZE" >> .transfer/diagnostic.txt
+          echo "expected_sha=$EXPECTED_SHA" >> .transfer/diagnostic.txt
+          curl -sSL --retry 2 --retry-delay 1 -D .transfer/headers.txt "$SHARE_URL" -o .transfer/share.bin || true
+          echo '--- headers ---' >> .transfer/diagnostic.txt
+          sed -n '1,120p' .transfer/headers.txt >> .transfer/diagnostic.txt 2>/dev/null || true
+          echo '--- share payload ---' >> .transfer/diagnostic.txt
+          if [ -f .transfer/share.bin ]; then
+            echo "share_size=$(stat -c '%s' .transfer/share.bin)" >> .transfer/diagnostic.txt
+            echo "share_sha=$(sha256sum .transfer/share.bin | awk '{print $1}')" >> .transfer/diagnostic.txt
+            file .transfer/share.bin >> .transfer/diagnostic.txt || true
+          fi
 
           verify() {
             local f="$1"
@@ -35,18 +48,19 @@ jobs:
             local size sha
             size=$(stat -c '%s' "$f")
             sha=$(sha256sum "$f" | awk '{print $1}')
-            echo "candidate=$f size=$size sha=$sha"
+            echo "candidate=$f size=$size sha=$sha" >> .transfer/diagnostic.txt
             [ "$size" = "$EXPECTED_SIZE" ] && [ "$sha" = "$EXPECTED_SHA" ] && unzip -t "$f" >/dev/null
           }
 
           if verify .transfer/share.bin; then
-            mv .transfer/share.bin .transfer/final.zip
+            cp .transfer/share.bin .transfer/final.zip
+            echo 'verified=share_url' >> .transfer/diagnostic.txt
             exit 0
           fi
 
           python3 - <<'PY' > .transfer/urls.txt
           import re, html
-          raw=open('.transfer/share.bin','rb').read().decode('utf-8','ignore')
+          raw=open('.transfer/share.bin','rb').read().decode('utf-8','ignore') if __import__('os').path.exists('.transfer/share.bin') else ''
           raw=html.unescape(raw)
           urls=[]
           for pat in [r'https?://[^"\'<>\\\s]+', r'(?:href|src)=["\']([^"\']+)["\']']:
@@ -56,44 +70,46 @@ jobs:
               if isinstance(u, tuple): u=u[0]
               if u not in seen:
                   seen.append(u)
-          for u in seen:
-              print(u)
+          print('\n'.join(seen))
           PY
-
-          echo 'Discovered URLs:'
-          sed -n '1,120p' .transfer/urls.txt
+          echo '--- discovered urls ---' >> .transfer/diagnostic.txt
+          sed -n '1,200p' .transfer/urls.txt >> .transfer/diagnostic.txt
 
           n=0
           while IFS= read -r u; do
-            case "$u" in
-              /*) u="https://firestorage.ai$u" ;;
-            esac
-            case "$u" in
-              http://*|https://*) ;;
-              *) continue ;;
-            esac
-            n=$((n+1))
-            out=".transfer/candidate-$n.bin"
-            if curl -fsSL --retry 2 "$u" -o "$out"; then
-              if verify "$out"; then
-                mv "$out" .transfer/final.zip
-                exit 0
-              fi
+            case "$u" in /*) u="https://firestorage.ai$u" ;; esac
+            case "$u" in http://*|https://*) ;; *) continue ;; esac
+            n=$((n+1)); out=".transfer/candidate-$n.bin"
+            curl -sSL --retry 1 "$u" -o "$out" || continue
+            if verify "$out"; then
+              cp "$out" .transfer/final.zip
+              echo "verified=url-$n" >> .transfer/diagnostic.txt
+              exit 0
             fi
           done < .transfer/urls.txt
-
-          echo 'No verified artifact could be obtained from share page.' >&2
+          echo 'verified=no' >> .transfer/diagnostic.txt
           exit 42
 
-      - name: Install verified artifact in test channel
+      - name: Commit verified artifact or diagnostic
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
-          cp .transfer/final.zip channel/translation-2026.09.07.1.zip
-          sha256sum channel/translation-2026.09.07.1.zip
-          unzip -l channel/translation-2026.09.07.1.zip
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add channel/translation-2026.09.07.1.zip
-          git commit -m 'build: stage translation 2026.09.07.1' || true
+          if [ -f .transfer/final.zip ]; then
+            cp .transfer/final.zip channel/translation-2026.09.07.1.zip
+            sha256sum channel/translation-2026.09.07.1.zip
+            unzip -t channel/translation-2026.09.07.1.zip
+            git add channel/translation-2026.09.07.1.zip
+            git commit -m 'build: stage translation 2026.09.07.1'
+          else
+            cp .transfer/diagnostic.txt channel/r15-transfer-diagnostic.txt
+            git add channel/r15-transfer-diagnostic.txt
+            git commit -m 'test: capture R15 transfer diagnostic'
+          fi
           git push origin HEAD:test/r15-translation
+
+      - name: Enforce verified transfer
+        if: steps.transfer.outcome != 'success'
+        run: exit 42
