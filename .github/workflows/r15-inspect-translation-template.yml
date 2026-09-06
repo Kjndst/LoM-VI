@@ -18,33 +18,39 @@ jobs:
         with:
           ref: test/r15-translation
           fetch-depth: 0
-      - name: Extract stable translation template and structural diagnostics
+      - name: Extract translation and core contracts
         shell: bash
         run: |
           set -euo pipefail
-          SRC="$GITHUB_WORKSPACE/channel/translation-2026.09.03.4.zip"
-          WORK=/tmp/r15-template
-          OUT="$GITHUB_WORKSPACE/channel/build/r15-template"
+          TSRC="$GITHUB_WORKSPACE/channel/translation-2026.09.03.4.zip"
+          CSRC="$GITHUB_WORKSPACE/channel/core-0.2.0.4.zip"
+          TWORK=/tmp/r15-template
+          CWORK=/tmp/r15-core
+          TOUT="$GITHUB_WORKSPACE/channel/build/r15-template"
+          COUT="$GITHUB_WORKSPACE/channel/build/r15-core-template"
           INV="$GITHUB_WORKSPACE/channel/build/r15-template-inventory.txt"
           SAMPLE="$GITHUB_WORKSPACE/channel/build/r15-template-samples.txt"
           STRUCT="$GITHUB_WORKSPACE/channel/build/r15-template-structure.txt"
-          rm -rf "$WORK" "$OUT"
-          mkdir -p "$WORK" "$OUT"
-          unzip -q "$SRC" -d "$WORK"
-          cp -a "$WORK"/. "$OUT"/
+          CORE="$GITHUB_WORKSPACE/channel/build/r15-core-samples.txt"
+          rm -rf "$TWORK" "$CWORK" "$TOUT" "$COUT"
+          mkdir -p "$TWORK" "$CWORK" "$TOUT" "$COUT"
+          unzip -q "$TSRC" -d "$TWORK"
+          unzip -q "$CSRC" -d "$CWORK"
+          cp -a "$TWORK"/. "$TOUT"/
+          cp -a "$CWORK"/. "$COUT"/
           : > "$INV"
           while IFS= read -r -d '' f; do
-            rel="${f#$WORK/}"
+            rel="${f#$TWORK/}"
             size="$(stat -c '%s' "$f")"
             sha="$(sha256sum "$f" | awk '{print $1}')"
             type="$(file -b "$f")"
             printf '%s\t%s\t%s\t%s\n' "$rel" "$size" "$sha" "$type" >> "$INV"
-          done < <(find "$WORK" -type f -print0 | sort -z)
+          done < <(find "$TWORK" -type f -print0 | sort -z)
           echo "Stable ZIP:" >> "$INV"
-          sha256sum "$SRC" >> "$INV"
-          python3 - "$WORK" "$SAMPLE" "$STRUCT" <<'PY'
+          sha256sum "$TSRC" >> "$INV"
+          python3 - "$TWORK" "$CWORK" "$SAMPLE" "$STRUCT" "$CORE" <<'PY'
           import os, sys, re, collections
-          root, out, struct = sys.argv[1:]
+          troot, croot, out, struct, core = sys.argv[1:]
           rels = [
               'game/Saved/Mods/lua/mods/lom_vi/IdOverrides.lua',
               'game/Saved/Mods/lua/mods/lom_vi/SafeLiterals.lua',
@@ -52,41 +58,41 @@ jobs:
           ]
           with open(out, 'w', encoding='utf-8') as o:
               for rel in rels:
-                  p=os.path.join(root,*rel.split('/'))
-                  raw=open(p,encoding='utf-8',newline='').read()
-                  lines=raw.splitlines()
-                  o.write(f'===== {rel} =====\nchars={len(raw)} lines={len(lines)}\n')
-                  o.write('FIRST_LINES:\n')
+                  p=os.path.join(troot,*rel.split('/'))
+                  raw=open(p,encoding='utf-8',newline='').read(); lines=raw.splitlines()
+                  o.write(f'===== {rel} =====\nchars={len(raw)} lines={len(lines)}\nFIRST_LINES:\n')
                   for line in lines[:20]: o.write(repr(line[:1200])+'\n')
                   o.write('LAST_LINES:\n')
                   for line in lines[-20:]: o.write(repr(line[:1200])+'\n')
                   o.write('\n')
-          p=os.path.join(root,'game/Saved/Mods/lua/mods/lom_vi/IdOverrides.lua')
+          p=os.path.join(troot,'game/Saved/Mods/lua/mods/lom_vi/IdOverrides.lua')
           lines=open(p,encoding='utf-8').read().splitlines()
           with open(struct,'w',encoding='utf-8') as o:
               o.write('NON_NUMERIC_STRUCTURAL_LINES\n')
               for i,line in enumerate(lines,1):
                   s=line.strip()
-                  if not s: continue
-                  if re.match(r'^\[\d+\]\s*=',s): continue
-                  if re.match(r'^--',s): continue
-                  # emit table boundaries/module labels/non-numeric keys only
-                  if s in {'return {','},','}'} or re.match(r'^[A-Za-z_][A-Za-z0-9_]*\s*=\s*\{',s) or re.match(r'^\[".*"\]\s*=\s*\{',s):
-                      o.write(f'{i}: {line[:1600]}\n')
-              o.write('\nSECTION_COUNTS\n')
-              section='root'; counts=collections.Counter(); modules=[]
+                  if not s or re.match(r'^\[\d+\]\s*=',s) or re.match(r'^--',s): continue
+                  if s in {'return {','},','}'} or re.match(r'^[A-Za-z_][A-Za-z0-9_]*\s*=\s*\{',s) or re.match(r'^\[".*"\]\s*=\s*\{',s): o.write(f'{i}: {line[:1600]}\n')
+              o.write('\nSECTION_COUNTS\n'); section='root'; counts=collections.Counter(); modules=[]
               for line in lines:
-                  s=line.strip()
-                  m=re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*\{',s)
-                  if m:
-                      section=m.group(1)
-                  mm=re.match(r'^\["(.*)"\]\s*=\s*\{',s)
-                  if mm:
-                      modules.append(mm.group(1)); section='module:'+mm.group(1)
+                  s=line.strip(); m=re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*\{',s); mm=re.match(r'^\["(.*)"\]\s*=\s*\{',s)
+                  if m: section=m.group(1)
+                  if mm: modules.append(mm.group(1)); section='module:'+mm.group(1)
                   if re.match(r'^\[\d+\]\s*=',s): counts[section]+=1
               for k,v in counts.items(): o.write(f'{k}\t{v}\n')
-              o.write(f'MODULES={len(modules)}\n')
-              for m in modules: o.write('MODULE\t'+m+'\n')
+              o.write(f'MODULES={len(modules)}\n'); [o.write('MODULE\t'+m+'\n') for m in modules]
+          with open(core,'w',encoding='utf-8') as o:
+              for dirpath,_,files in os.walk(croot):
+                  for fn in sorted(files):
+                      p=os.path.join(dirpath,fn); rel=os.path.relpath(p,croot).replace(os.sep,'/')
+                      try: raw=open(p,encoding='utf-8').read()
+                      except UnicodeDecodeError: continue
+                      o.write(f'===== {rel} =====\n')
+                      for i,line in enumerate(raw.splitlines(),1):
+                          low=line.lower()
+                          if any(k in low for k in ['idoverride','splitoverride','safeliteral','uiliteral','aggregateoverride','lom_vi','module']):
+                              o.write(f'{i}: {line[:1800]}\n')
+                      o.write('\n')
           PY
       - name: Commit diagnostics to test branch
         shell: bash
@@ -94,10 +100,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '418982+github-actions[bot]@users.noreply.github.com'
-          git add channel/build/r15-template channel/build/r15-template-inventory.txt channel/build/r15-template-samples.txt channel/build/r15-template-structure.txt
-          if git diff --cached --quiet; then
-            echo 'Diagnostics already current.'
-            exit 0
-          fi
-          git commit -m 'test: inspect stable override structure for R15'
+          git add channel/build/r15-template channel/build/r15-core-template channel/build/r15-template-inventory.txt channel/build/r15-template-samples.txt channel/build/r15-template-structure.txt channel/build/r15-core-samples.txt
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'test: inspect Core data lookup contract for R15'
           git push origin HEAD:test/r15-translation
