@@ -1,0 +1,40 @@
+===== game/Saved/Mods/bootstrap.lua =====
+44: local function module_relative(name)
+46:     if name:sub(1, 12) ~= "mods.lom_vi." and name ~= "mods.lom_vi.Init" then return nil end
+119:     local relative = module_relative(name)
+123:             report("external module " .. tostring(name) .. " failed: " .. tostring(message))
+159:     if not loaded then report("entry module " .. tostring(name) .. " failed: " .. tostring(message)) end
+
+===== game/Saved/Mods/lua/mods/lom_vi/BootstrapFactory.lua =====
+13: return function(Loader, IdData, SafeLiterals, UiLiterals, Options)
+16:     SafeLiterals = SafeLiterals or {}
+17:     UiLiterals = UiLiterals or {}
+20:     local aggregate = IdData.aggregateOverrides or {}
+21:     local split = IdData.splitOverrides or {}
+93:         local replacement = SafeLiterals[value]
+105:         local replacement = UiLiterals[value]
+107:         replacement = SafeLiterals[value]
+139:             local module = type(value) == "table" and value or getSymbol(value, environment, symbolName)
+140:             if type(module) ~= "table" then return value end
+141:             local data = type(module.data) == "table" and module.data or module
+151:     -- Apply selected Vietnamese IDs directly to split StringDB modules as well.
+473:     local function scanLoadedModules()
+509:     -- while observing future Lua modules. We replace each function in-place;
+511:     local function instrumentFutureModules()
+539:                                         repairValue(root, "module." .. tostring(name) .. ".return" .. tostring(i), 0, {})
+540:                                         instrumentGraph(root, "module." .. tostring(name) .. ".return" .. tostring(i), 0, {}, {nodes = 0})
+542:                                         results[i] = repairString(root, "module." .. tostring(name) .. ".return" .. tostring(i))
+546:                                     repairValue(env, "module." .. tostring(name) .. ".env", 0, {})
+547:                                     instrumentGraph(env, "module." .. tostring(name) .. ".env", 0, {}, {nodes = 0})
+569:         report("LoM-VI future-module searchers wrapped=" .. tostring(wrapped))
+573:     instrumentFutureModules()
+574:     scanLoadedModules()
+584:         scanLoadedModules = scanLoadedModules,
+
+===== game/Saved/Mods/lua/mods/lom_vi/Init.lua =====
+5: local Factory = require("mods.lom_vi.BootstrapFactory")
+6: local IdData = require("mods.lom_vi.IdOverrides")
+7: local SafeLiterals = require("mods.lom_vi.SafeLiterals")
+8: local UiLiterals = require("mods.lom_vi.UiLiterals")
+19: return Factory(Loader, IdData, SafeLiterals, UiLiterals, {
+
