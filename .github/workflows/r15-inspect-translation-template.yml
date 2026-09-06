@@ -18,7 +18,7 @@ jobs:
         with:
           ref: test/r15-translation
           fetch-depth: 0
-      - name: Extract stable translation template
+      - name: Extract stable translation template and schema samples
         shell: bash
         run: |
           set -euo pipefail
@@ -26,6 +26,7 @@ jobs:
           WORK=/tmp/r15-template
           OUT="$GITHUB_WORKSPACE/channel/build/r15-template"
           INV="$GITHUB_WORKSPACE/channel/build/r15-template-inventory.txt"
+          SAMPLE="$GITHUB_WORKSPACE/channel/build/r15-template-samples.txt"
           rm -rf "$WORK" "$OUT"
           mkdir -p "$WORK" "$OUT"
           unzip -q "$SRC" -d "$WORK"
@@ -40,16 +41,40 @@ jobs:
           done < <(find "$WORK" -type f -print0 | sort -z)
           echo "Stable ZIP:" >> "$INV"
           sha256sum "$SRC" >> "$INV"
-      - name: Commit extracted template and inventory to test branch
+          python3 - "$WORK" "$SAMPLE" <<'PY'
+          import os, sys, re
+          root, out = sys.argv[1:]
+          rels = [
+              'game/Saved/Mods/lua/mods/lom_vi/IdOverrides.lua',
+              'game/Saved/Mods/lua/mods/lom_vi/SafeLiterals.lua',
+              'game/Saved/Mods/lua/mods/lom_vi/UiLiterals.lua',
+          ]
+          with open(out, 'w', encoding='utf-8') as o:
+              for rel in rels:
+                  p=os.path.join(root,*rel.split('/'))
+                  raw=open(p,encoding='utf-8',newline='').read()
+                  lines=raw.splitlines()
+                  o.write(f'===== {rel} =====\n')
+                  o.write(f'chars={len(raw)} lines={len(lines)}\n')
+                  o.write('FIRST_LINES:\n')
+                  for line in lines[:20]: o.write(repr(line[:1200])+'\n')
+                  o.write('LAST_LINES:\n')
+                  for line in lines[-20:]: o.write(repr(line[:1200])+'\n')
+                  o.write('PATTERN_COUNTS:\n')
+                  for pat in [r'^return', r'^local', r'^\s*\[', r'^\s*[A-Za-z_]+\s*=']:
+                      o.write(f'{pat}: {sum(bool(re.search(pat,x)) for x in lines)}\n')
+                  o.write('\n')
+          PY
+      - name: Commit template diagnostics to test branch
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '418982+github-actions[bot]@users.noreply.github.com'
-          git add channel/build/r15-template channel/build/r15-template-inventory.txt
+          git add channel/build/r15-template channel/build/r15-template-inventory.txt channel/build/r15-template-samples.txt
           if git diff --cached --quiet; then
-            echo 'Template already current.'
+            echo 'Diagnostics already current.'
             exit 0
           fi
-          git commit -m 'test: extract stable translation template for R15'
+          git commit -m 'test: inspect stable translation Lua schema for R15'
           git push origin HEAD:test/r15-translation
