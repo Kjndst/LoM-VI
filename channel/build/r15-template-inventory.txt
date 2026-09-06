@@ -1,0 +1,5 @@
+game/Saved/Mods/lua/mods/lom_vi/IdOverrides.lua	2879453	c4d78c83073d01617c0690cd212389992a7aecf1e93277b3ade815eff8d6f1d1	Unicode text, UTF-8 text, with very long lines (944)
+game/Saved/Mods/lua/mods/lom_vi/SafeLiterals.lua	3842832	a14b61a005195e20aa1499efa86dca434d381f72164533e020ceb445f45a8cb5	Unicode text, UTF-8 text, with very long lines (2320)
+game/Saved/Mods/lua/mods/lom_vi/UiLiterals.lua	6236	bc6a4474e680896237f2dd2bde6c2cdf585b1b2d83b5351097df70216d47ee4f	Unicode text, UTF-8 text
+Stable ZIP:
+33595aa3e8e703d5efa21a3718dedb4e2002970ef56623c6e7d7097eb01faa70  /home/runner/work/LoM-VI/LoM-VI/channel/translation-2026.09.03.4.zip
