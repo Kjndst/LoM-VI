@@ -42,11 +42,6 @@ LAST_LINES:
 '    },'
 '  },'
 '}'
-PATTERN_COUNTS:
-^return: 1
-^local: 0
-^\s*\[: 23227
-^\s*[A-Za-z_]+\s*=: 2
 
 ===== game/Saved/Mods/lua/mods/lom_vi/SafeLiterals.lua =====
 chars=2574956 lines=20897
@@ -92,11 +87,6 @@ LAST_LINES:
 '  ["？？？：我怀疑这本笔记是具备一定生命和智慧的邪恶物品。"] = "？？？: Tôi nghi cuốn bút ký này là một vật phẩm tà ác có mức độ sinh mệnh và trí tuệ nhất định.",'
 '  ["？？？？？？？？"] = "？？？？？？？？",'
 '}'
-PATTERN_COUNTS:
-^return: 1
-^local: 0
-^\s*\[: 20892
-^\s*[A-Za-z_]+\s*=: 0
 
 ===== game/Saved/Mods/lua/mods/lom_vi/UiLiterals.lua =====
 chars=4462 lines=148
@@ -142,9 +132,4 @@ LAST_LINES:
 '  ["魔法穿刺"] = "Xuyên Ma",'
 '  ["魔法防御"] = "Ma Phòng",'
 '}'
-PATTERN_COUNTS:
-^return: 1
-^local: 0
-^\s*\[: 143
-^\s*[A-Za-z_]+\s*=: 0
 

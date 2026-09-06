@@ -1,0 +1,87 @@
+NON_NUMERIC_STRUCTURAL_LINES
+4: return {
+5:   aggregateOverrides = {
+9946:   },
+9947:   splitOverrides = {
+9948:     ["aura"] = {
+9967:     },
+9968:     ["buffappear"] = {
+11908:     },
+11909:     ["buffdata"] = {
+15731:     },
+15732:     ["debug"] = {
+16354:     },
+16355:     ["guide"] = {
+16693:     },
+16694:     ["itemgift"] = {
+17337:     },
+17338:     ["itemlife"] = {
+17456:     },
+17457:     ["itemnormal"] = {
+18700:     },
+18701:     ["itemoutlook"] = {
+19976:     },
+19977:     ["loading"] = {
+20246:     },
+20247:     ["main"] = {
+20359:     },
+20360:     ["monsterskill"] = {
+21679:     },
+21680:     ["nocamera"] = {
+21708:     },
+21709:     ["skill"] = {
+22317:     },
+22318:     ["skill1"] = {
+22708:     },
+22709:     ["skill2"] = {
+22802:     },
+22803:     ["skill3"] = {
+22926:     },
+22927:     ["spellfield"] = {
+22989:     },
+22990:     ["traingame"] = {
+23253:     },
+23254:   },
+23255: }
+
+SECTION_COUNTS
+aggregateOverrides	9940
+module:aura	18
+module:buffappear	1939
+module:buffdata	3821
+module:debug	621
+module:guide	337
+module:itemgift	642
+module:itemlife	117
+module:itemnormal	1242
+module:itemoutlook	1274
+module:loading	268
+module:main	111
+module:monsterskill	1318
+module:nocamera	27
+module:skill	607
+module:skill1	389
+module:skill2	92
+module:skill3	122
+module:spellfield	61
+module:traingame	262
+MODULES=19
+MODULE	aura
+MODULE	buffappear
+MODULE	buffdata
+MODULE	debug
+MODULE	guide
+MODULE	itemgift
+MODULE	itemlife
+MODULE	itemnormal
+MODULE	itemoutlook
+MODULE	loading
+MODULE	main
+MODULE	monsterskill
+MODULE	nocamera
+MODULE	skill
+MODULE	skill1
+MODULE	skill2
+MODULE	skill3
+MODULE	spellfield
+MODULE	traingame
