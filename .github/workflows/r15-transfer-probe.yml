@@ -20,36 +20,38 @@ jobs:
         shell: bash
         env:
           SHARE_URL: https://firestorage.ai/ja/f/_cF9atQZUONX
-          JS_URL: https://firestorage.ai/_next/static/chunks/app/(files)/ja/f/page-4d19ae0a4ce39d79.js
+          JS_URL: https://firestorage.ai/_next/static/chunks/app/%28files%29/ja/f/page-4d19ae0a4ce39d79.js
         run: |
           set -euo pipefail
           mkdir -p .probe
           curl -sSL --retry 2 "$SHARE_URL" -o .probe/page.html
-          curl -sSL --retry 2 "$JS_URL" -o .probe/page.js
+          curl -sSL --retry 2 -D .probe/js-headers.txt "$JS_URL" -o .probe/page.js
           python3 - <<'PY' > channel/r15-transfer-client-probe.txt
           import re, os
           js=open('.probe/page.js','r',encoding='utf-8',errors='ignore').read()
           print('js_size=',len(js))
-          needles=['/api/','download','public_id','publicId','share','fetch(','axios','file_id','fileId','signed','presign','token']
+          print('headers=',open('.probe/js-headers.txt','r',encoding='utf-8',errors='ignore').read())
+          print('head=',js[:500])
+          needles=['/api/','download','public_id','publicId','share','fetch(','axios','file_id','fileId','signed','presign','token','prepare']
           for needle in needles:
               print('\n===',needle,'===')
               pos=0; count=0
-              while count<40:
+              while count<50:
                   i=js.lower().find(needle.lower(),pos)
                   if i<0: break
-                  a=max(0,i-450); b=min(len(js),i+850)
+                  a=max(0,i-500); b=min(len(js),i+1000)
                   print(js[a:b].replace('\n',' '))
                   print('\n---')
                   pos=i+len(needle); count+=1
           print('\n=== STRING CANDIDATES ===')
           vals=[]
-          for q,s in re.findall(r'(["\'])(.{1,250}?)\1',js):
-              if any(k in s.lower() for k in ['api','download','share','file','public','token','signed']):
+          for q,s in re.findall(r'(["\'])(.{1,300}?)\1',js):
+              if any(k in s.lower() for k in ['api','download','share','file','public','token','signed','prepare']):
                   if s not in vals: vals.append(s)
-          for s in vals[:500]: print(s)
+          for s in vals[:800]: print(s)
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add channel/r15-transfer-client-probe.txt
-          git commit -m 'test: inspect Firestorage download client route'
+          git commit -m 'test: inspect encoded Firestorage client route'
           git push origin HEAD:test/r15-translation
