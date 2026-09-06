@@ -1,0 +1,55 @@
+name: Inspect R15 translation template
+
+on:
+  push:
+    branches: [test/r15-translation]
+    paths:
+      - '.github/workflows/r15-inspect-translation-template.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test/r15-translation
+          fetch-depth: 0
+      - name: Extract stable translation template
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="$GITHUB_WORKSPACE/channel/translation-2026.09.03.4.zip"
+          WORK=/tmp/r15-template
+          OUT="$GITHUB_WORKSPACE/channel/build/r15-template"
+          INV="$GITHUB_WORKSPACE/channel/build/r15-template-inventory.txt"
+          rm -rf "$WORK" "$OUT"
+          mkdir -p "$WORK" "$OUT"
+          unzip -q "$SRC" -d "$WORK"
+          cp -a "$WORK"/. "$OUT"/
+          : > "$INV"
+          while IFS= read -r -d '' f; do
+            rel="${f#$WORK/}"
+            size="$(stat -c '%s' "$f")"
+            sha="$(sha256sum "$f" | awk '{print $1}')"
+            type="$(file -b "$f")"
+            printf '%s\t%s\t%s\t%s\n' "$rel" "$size" "$sha" "$type" >> "$INV"
+          done < <(find "$WORK" -type f -print0 | sort -z)
+          echo "Stable ZIP:" >> "$INV"
+          sha256sum "$SRC" >> "$INV"
+      - name: Commit extracted template and inventory to test branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '418982+github-actions[bot]@users.noreply.github.com'
+          git add channel/build/r15-template channel/build/r15-template-inventory.txt
+          if git diff --cached --quiet; then
+            echo 'Template already current.'
+            exit 0
+          fi
+          git commit -m 'test: extract stable translation template for R15'
+          git push origin HEAD:test/r15-translation
