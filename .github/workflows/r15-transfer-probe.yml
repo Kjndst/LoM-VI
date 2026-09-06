@@ -16,42 +16,43 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: test/r15-translation
-      - name: Probe Firestorage client download API
+      - name: Inspect Firestorage shared chunks
         shell: bash
-        env:
-          SHARE_URL: https://firestorage.ai/ja/f/_cF9atQZUONX
-          JS_URL: https://firestorage.ai/_next/static/chunks/app/%28files%29/ja/f/page-4d19ae0a4ce39d79.js
         run: |
           set -euo pipefail
           mkdir -p .probe
-          curl -sSL --retry 2 "$SHARE_URL" -o .probe/page.html
-          curl -sSL --retry 2 -D .probe/js-headers.txt "$JS_URL" -o .probe/page.js
+          base='https://firestorage.ai/_next/static/chunks'
+          curl -sSL --retry 2 "$base/8500-f4d7bfbe7500f274.js" -o .probe/8500.js
+          curl -sSL --retry 2 "$base/8437-d65cc193dc908afa.js" -o .probe/8437.js
+          curl -sSL --retry 2 "$base/5841-1160578ba9bb4f3e.js" -o .probe/5841.js
+          curl -sSL --retry 2 "$base/4899-d89df949f2dbd5af.js" -o .probe/4899.js
           python3 - <<'PY' > channel/r15-transfer-client-probe.txt
-          import re, os
-          js=open('.probe/page.js','r',encoding='utf-8',errors='ignore').read()
-          print('js_size=',len(js))
-          print('headers=',open('.probe/js-headers.txt','r',encoding='utf-8',errors='ignore').read())
-          print('head=',js[:500])
-          needles=['/api/','download','public_id','publicId','share','fetch(','axios','file_id','fileId','signed','presign','token','prepare']
-          for needle in needles:
-              print('\n===',needle,'===')
-              pos=0; count=0
-              while count<50:
-                  i=js.lower().find(needle.lower(),pos)
-                  if i<0: break
-                  a=max(0,i-500); b=min(len(js),i+1000)
-                  print(js[a:b].replace('\n',' '))
-                  print('\n---')
-                  pos=i+len(needle); count+=1
-          print('\n=== STRING CANDIDATES ===')
-          vals=[]
-          for q,s in re.findall(r'(["\'])(.{1,300}?)\1',js):
-              if any(k in s.lower() for k in ['api','download','share','file','public','token','signed','prepare']):
-                  if s not in vals: vals.append(s)
-          for s in vals[:800]: print(s)
+          import glob,re,os
+          needles=['FileDownloadPreparing','/api/','download','public_id','publicId','fetch(','axios','file_id','fileId','signed','presign','token','prepare','shared']
+          for path in sorted(glob.glob('.probe/*.js')):
+              js=open(path,'r',encoding='utf-8',errors='ignore').read()
+              print('\n########',os.path.basename(path),'size',len(js),'########')
+              for needle in needles:
+                  hits=[]; pos=0
+                  while len(hits)<25:
+                      i=js.lower().find(needle.lower(),pos)
+                      if i<0: break
+                      hits.append(i); pos=i+len(needle)
+                  if hits:
+                      print('\n===',needle,'hits',hits[:25],'===')
+                      for i in hits[:12]:
+                          a=max(0,i-700); b=min(len(js),i+1400)
+                          print(js[a:b].replace('\n',' ')); print('\n---')
+              print('\n=== candidate strings ===')
+              vals=[]
+              for m in re.finditer(r'["\']([^"\']{1,350})["\']',js):
+                  s=m.group(1)
+                  if any(k in s.lower() for k in ['api','download','share','file','public','token','signed','prepare']):
+                      if s not in vals: vals.append(s)
+              for s in vals[:500]: print(s)
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add channel/r15-transfer-client-probe.txt
-          git commit -m 'test: inspect encoded Firestorage client route'
+          git commit -m 'test: inspect Firestorage shared download chunks'
           git push origin HEAD:test/r15-translation
