@@ -1,0 +1,69 @@
+expected_size=4939684
+expected_sha=bf55ec014a4df2e81940a7bf239930be1193dbd1baa751f4f77d9ac6c55cda42
+--- headers ---
+HTTP/1.1 200 OK
+Server: nginx
+Date: Sun, 06 Sep 2026 23:39:53 GMT
+Content-Type: text/html
+Content-Length: 11099
+Last-Modified: Wed, 02 Sep 2026 06:18:16 GMT
+Connection: keep-alive
+ETag: "6a97bfa8-2b5b"
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Strict-Transport-Security: max-age=31536000
+Accept-Ranges: bytes
+
+--- share payload ---
+share_size=11099
+share_sha=f8e13f5aafcd5ef55b4288e3ff62b1a735beb591edbd8e3d9e0a3041cfd97d03
+.transfer/share.bin: HTML document, Unicode text, UTF-8 text, with very long lines (10831), with no line terminators
+candidate=.transfer/share.bin size=11099 sha=f8e13f5aafcd5ef55b4288e3ff62b1a735beb591edbd8e3d9e0a3041cfd97d03
+--- discovered urls ---
+/_next/static/media/logo.df424e28.png
+/_next/static/css/32a23660be03df43.css
+/_next/static/css/9556970388868075.css
+/_next/static/chunks/webpack-276504efae57521f.js
+/_next/static/chunks/4bd1b696-93bf506b236d6248.js
+/_next/static/chunks/3794-56f19dc9e2f95fcd.js
+/_next/static/chunks/main-app-7107f99dce0bf1eb.js
+/_next/static/chunks/8500-f4d7bfbe7500f274.js
+/_next/static/chunks/8437-d65cc193dc908afa.js
+/_next/static/chunks/5841-1160578ba9bb4f3e.js
+/_next/static/chunks/4899-d89df949f2dbd5af.js
+/_next/static/chunks/app/(files)/ja/f/page-4d19ae0a4ce39d79.js
+/favicon.ico?2f148700f50ff743
+/favicon.ico
+/_next/static/chunks/polyfills-42372ed130431b0a.js
+/ja/
+/en/
+/_next/static/media/logow.4899c21b.png
+/ja/privacy.html
+/ja/company.html
+/ja/terms.html
+/ja/firestorage_privacyall.html
+candidate=.transfer/candidate-1.bin size=22235 sha=a025926b5ebd033608ebb85e09d5bcba4a2ec9fe0d6eb020d87522a2531ed03b
+candidate=.transfer/candidate-2.bin size=180200 sha=460107060c4cc8447d7463190a6707158e925bceb9dbf0dabed8184dded5e4c0
+candidate=.transfer/candidate-3.bin size=16986 sha=cd3d038a4be8a0c51ea5afdf536bbf75e02c2868ccf8595f0d4934ddbd0d56ac
+candidate=.transfer/candidate-4.bin size=3356 sha=0131c2ea9d4251d7692fa04fbc5fd93bb10153ed67167ae20c8b21c6ee195ee4
+candidate=.transfer/candidate-5.bin size=201055 sha=cd98ae410a5ad3fbd68518e7ac7d62a3d8510707f87cf2482c5e6948af5e8222
+candidate=.transfer/candidate-6.bin size=241300 sha=651a6dda9ecebe8114fa49563315908225d3275688ea36c2a03f09ea8e60f255
+candidate=.transfer/candidate-7.bin size=516 sha=d224dd7f739bf32da3630526dd1682e67809e68f2a80b1f4c413ce014ff610e5
+candidate=.transfer/candidate-8.bin size=8632 sha=1706db1eabe4cf94bc10f452b748a68a1de68236e3de6f99f96bf457c33eaab2
+candidate=.transfer/candidate-9.bin size=14254 sha=49a7e010e887a0cc7cd2086252dfe2fa3fc4abf41f28524003dfb09201a02111
+candidate=.transfer/candidate-10.bin size=12263 sha=77d4caba8f684a858154ef78503ceeaf065d2c4354c5953f7ec165bd907872bd
+candidate=.transfer/candidate-11.bin size=37880 sha=9c34b202443c1996498d52926a09ccffd6367ce4a891cf9536c4f06e54aa274f
+candidate=.transfer/candidate-12.bin size=149 sha=88131c6a5090d0845e8828f4801b4e91afac765631b838663db4575ab3c344c0
+candidate=.transfer/candidate-13.bin size=152047 sha=548f94797a45c7fe89557fe1eac23e854ad4cefdd4d08852690c996cf243d573
+candidate=.transfer/candidate-14.bin size=152047 sha=548f94797a45c7fe89557fe1eac23e854ad4cefdd4d08852690c996cf243d573
+candidate=.transfer/candidate-15.bin size=112594 sha=0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683
+candidate=.transfer/candidate-16.bin size=248990 sha=95fad719159b945db2112ac881d3ae9555133ff54de850cdfbc8da784e7e1aae
+candidate=.transfer/candidate-17.bin size=208767 sha=c5075b63b1374492e6085fdb85576f9ea52d860ceff7145773186644388deb08
+candidate=.transfer/candidate-18.bin size=21540 sha=7d96719dca7b9fa6bd02bf0c2df69b0a1d00695b7ce363b279e8e86732789357
+candidate=.transfer/candidate-19.bin size=234684 sha=359bcace8da6563c79f7daa35f121a5c27df2c0f455f7b1c2772e549ee20f99e
+candidate=.transfer/candidate-20.bin size=192574 sha=8e86d673be2892aadc8dfccf8fa865365449f4f79b2d75476d94ef31d68334ca
+candidate=.transfer/candidate-21.bin size=235424 sha=fb3d647162eea36a41c1632745a932ffcd522b484962f996f317ba5fb7b93b84
+candidate=.transfer/candidate-22.bin size=203938 sha=ead1392a6e68851d28f74f0298d8f377d18e848f81c8491e2d3c49f41e50074c
+verified=no
