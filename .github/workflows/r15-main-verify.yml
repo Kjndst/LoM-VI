@@ -1,0 +1,44 @@
+name: R15 stable main verify
+
+on:
+  push:
+    branches: [test/r15-translation]
+    paths:
+      - '.github/workflows/r15-main-verify.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify stable manifest and artifact from main
+        shell: bash
+        env:
+          ZIP_URL: https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/translation-2026.09.07.1.zip
+          MANIFEST_URL: https://raw.githubusercontent.com/Kjndst/LoM-VI/main/channel/manifest.json
+          EXPECTED_SHA: bf55ec014a4df2e81940a7bf239930be1193dbd1baa751f4f77d9ac6c55cda42
+          EXPECTED_SIZE: '4939684'
+          EXPECTED_VERSION: '2026.09.07.1'
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 4 --retry-delay 2 "$ZIP_URL" -o translation.zip
+          curl -fsSL --retry 4 --retry-delay 2 "$MANIFEST_URL" -o manifest.json
+          test "$(stat -c '%s' translation.zip)" = "$EXPECTED_SIZE"
+          test "$(sha256sum translation.zip | awk '{print $1}')" = "$EXPECTED_SHA"
+          unzip -t translation.zip
+          python3 - <<'PY'
+          import json, os, zipfile
+          m=json.load(open('manifest.json',encoding='utf-8'))
+          t=m['translation']
+          assert t['version']==os.environ['EXPECTED_VERSION'], t
+          assert t['sha256']==os.environ['EXPECTED_SHA'], t
+          assert t['url']==os.environ['ZIP_URL'], t
+          assert m['core']['version']=='0.2.0.4', m['core']
+          expected={
+            'game/Saved/Mods/lua/mods/lom_vi/IdOverrides.lua',
+            'game/Saved/Mods/lua/mods/lom_vi/SafeLiterals.lua',
+            'game/Saved/Mods/lua/mods/lom_vi/UiLiterals.lua',
+          }
+          with zipfile.ZipFile('translation.zip') as z:
+              assert set(z.namelist())==expected, z.namelist()
+          print('STABLE_MAIN_VERIFY=PASS')
+          PY
