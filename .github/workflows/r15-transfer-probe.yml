@@ -16,43 +16,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: test/r15-translation
-      - name: Inspect Firestorage shared chunks
+      - name: Capture Firestorage download client chunk
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p .probe
-          base='https://firestorage.ai/_next/static/chunks'
-          curl -sSL --retry 2 "$base/8500-f4d7bfbe7500f274.js" -o .probe/8500.js
-          curl -sSL --retry 2 "$base/8437-d65cc193dc908afa.js" -o .probe/8437.js
-          curl -sSL --retry 2 "$base/5841-1160578ba9bb4f3e.js" -o .probe/5841.js
-          curl -sSL --retry 2 "$base/4899-d89df949f2dbd5af.js" -o .probe/4899.js
-          python3 - <<'PY' > channel/r15-transfer-client-probe.txt
-          import glob,re,os
-          needles=['FileDownloadPreparing','/api/','download','public_id','publicId','fetch(','axios','file_id','fileId','signed','presign','token','prepare','shared']
-          for path in sorted(glob.glob('.probe/*.js')):
-              js=open(path,'r',encoding='utf-8',errors='ignore').read()
-              print('\n########',os.path.basename(path),'size',len(js),'########')
-              for needle in needles:
-                  hits=[]; pos=0
-                  while len(hits)<25:
-                      i=js.lower().find(needle.lower(),pos)
-                      if i<0: break
-                      hits.append(i); pos=i+len(needle)
-                  if hits:
-                      print('\n===',needle,'hits',hits[:25],'===')
-                      for i in hits[:12]:
-                          a=max(0,i-700); b=min(len(js),i+1400)
-                          print(js[a:b].replace('\n',' ')); print('\n---')
-              print('\n=== candidate strings ===')
-              vals=[]
-              for m in re.finditer(r'["\']([^"\']{1,350})["\']',js):
-                  s=m.group(1)
-                  if any(k in s.lower() for k in ['api','download','share','file','public','token','signed','prepare']):
-                      if s not in vals: vals.append(s)
-              for s in vals[:500]: print(s)
-          PY
+          curl -sSL --retry 2 'https://firestorage.ai/_next/static/chunks/4899-d89df949f2dbd5af.js' -o channel/r15-firestorage-4899.js
+          test "$(stat -c '%s' channel/r15-firestorage-4899.js)" -gt 30000
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add channel/r15-transfer-client-probe.txt
-          git commit -m 'test: inspect Firestorage shared download chunks'
+          git add channel/r15-firestorage-4899.js
+          git commit -m 'test: capture Firestorage client chunk for transfer audit'
           git push origin HEAD:test/r15-translation
