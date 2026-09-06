@@ -16,43 +16,40 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: test/r15-translation
-      - name: Probe public share page
+      - name: Probe Firestorage client download API
         shell: bash
         env:
           SHARE_URL: https://firestorage.ai/ja/f/_cF9atQZUONX
+          JS_URL: https://firestorage.ai/_next/static/chunks/app/(files)/ja/f/page-4d19ae0a4ce39d79.js
         run: |
           set -euo pipefail
           mkdir -p .probe
-          curl -sSL --retry 2 -D .probe/headers.txt "$SHARE_URL" -o .probe/body.bin || true
-          {
-            echo '=== HEADERS ==='
-            sed -n '1,160p' .probe/headers.txt 2>/dev/null || true
-            echo '=== BODY META ==='
-            stat -c 'size=%s' .probe/body.bin 2>/dev/null || true
-            sha256sum .probe/body.bin 2>/dev/null || true
-            file .probe/body.bin 2>/dev/null || true
-            echo '=== URLS ==='
-            python3 - <<'PY'
-          import re, html, os
-          raw=open('.probe/body.bin','rb').read().decode('utf-8','ignore') if os.path.exists('.probe/body.bin') else ''
-          raw=html.unescape(raw)
-          found=[]
-          patterns=[r'https?://[^"\'<>\\\s]+',r'(?:href|src)=["\']([^"\']+)["\']',r'(/api/[^"\'<>\\\s]+)',r'(/[^"\'<>\\\s]*(?:download|file)[^"\'<>\\\s]*)']
-          for pat in patterns:
-              for u in re.findall(pat,raw):
-                  if isinstance(u,tuple): u=u[0]
-                  if u not in found: found.append(u)
-          for u in found[:300]: print(u)
+          curl -sSL --retry 2 "$SHARE_URL" -o .probe/page.html
+          curl -sSL --retry 2 "$JS_URL" -o .probe/page.js
+          python3 - <<'PY' > channel/r15-transfer-client-probe.txt
+          import re, os
+          js=open('.probe/page.js','r',encoding='utf-8',errors='ignore').read()
+          print('js_size=',len(js))
+          needles=['/api/','download','public_id','publicId','share','fetch(','axios','file_id','fileId','signed','presign','token']
+          for needle in needles:
+              print('\n===',needle,'===')
+              pos=0; count=0
+              while count<40:
+                  i=js.lower().find(needle.lower(),pos)
+                  if i<0: break
+                  a=max(0,i-450); b=min(len(js),i+850)
+                  print(js[a:b].replace('\n',' '))
+                  print('\n---')
+                  pos=i+len(needle); count+=1
+          print('\n=== STRING CANDIDATES ===')
+          vals=[]
+          for q,s in re.findall(r'(["\'])(.{1,250}?)\1',js):
+              if any(k in s.lower() for k in ['api','download','share','file','public','token','signed']):
+                  if s not in vals: vals.append(s)
+          for s in vals[:500]: print(s)
           PY
-            echo '=== BODY TEXT HEAD ==='
-            python3 - <<'PY'
-          import os
-          raw=open('.probe/body.bin','rb').read().decode('utf-8','ignore') if os.path.exists('.probe/body.bin') else ''
-          print(raw[:12000])
-          PY
-          } > channel/r15-transfer-probe.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add channel/r15-transfer-probe.txt
-          git commit -m 'test: capture R15 transfer probe'
+          git add channel/r15-transfer-client-probe.txt
+          git commit -m 'test: inspect Firestorage download client route'
           git push origin HEAD:test/r15-translation
