@@ -5,7 +5,6 @@ on:
     branches: [test/r15-translation]
     paths:
       - '.github/workflows/r15-final-transfer.yml'
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,98 +17,79 @@ jobs:
         with:
           ref: test/r15-translation
 
-      - name: Probe transfer and verify final artifact
-        id: transfer
-        continue-on-error: true
+      - name: Resolve signed download and verify final artifact
         shell: bash
         env:
-          SHARE_URL: https://firestorage.ai/ja/f/_cF9atQZUONX
+          API_BASE: https://api.firestorage.ai/dev/file
+          SHARE_ID: _cF9atQZUONX
+          EXPECTED_NAME: translation-2026.09.07.1.zip
           EXPECTED_SHA: bf55ec014a4df2e81940a7bf239930be1193dbd1baa751f4f77d9ac6c55cda42
           EXPECTED_SIZE: '4939684'
         run: |
-          set -u
+          set -euo pipefail
           mkdir -p .transfer
-          : > .transfer/diagnostic.txt
-          echo "expected_size=$EXPECTED_SIZE" >> .transfer/diagnostic.txt
-          echo "expected_sha=$EXPECTED_SHA" >> .transfer/diagnostic.txt
-          curl -sSL --retry 2 --retry-delay 1 -D .transfer/headers.txt "$SHARE_URL" -o .transfer/share.bin || true
-          echo '--- headers ---' >> .transfer/diagnostic.txt
-          sed -n '1,120p' .transfer/headers.txt >> .transfer/diagnostic.txt 2>/dev/null || true
-          echo '--- share payload ---' >> .transfer/diagnostic.txt
-          if [ -f .transfer/share.bin ]; then
-            echo "share_size=$(stat -c '%s' .transfer/share.bin)" >> .transfer/diagnostic.txt
-            echo "share_sha=$(sha256sum .transfer/share.bin | awk '{print $1}')" >> .transfer/diagnostic.txt
-            file .transfer/share.bin >> .transfer/diagnostic.txt || true
-          fi
+          curl -fsSL --retry 3 --retry-delay 1 \
+            "$API_BASE/shares/$SHARE_ID/files?maxResults=1000" \
+            -o .transfer/files.json
 
-          verify() {
-            local f="$1"
-            [ -f "$f" ] || return 1
-            local size sha
-            size=$(stat -c '%s' "$f")
-            sha=$(sha256sum "$f" | awk '{print $1}')
-            echo "candidate=$f size=$size sha=$sha" >> .transfer/diagnostic.txt
-            [ "$size" = "$EXPECTED_SIZE" ] && [ "$sha" = "$EXPECTED_SHA" ] && unzip -t "$f" >/dev/null
-          }
-
-          if verify .transfer/share.bin; then
-            cp .transfer/share.bin .transfer/final.zip
-            echo 'verified=share_url' >> .transfer/diagnostic.txt
-            exit 0
-          fi
-
-          python3 - <<'PY' > .transfer/urls.txt
-          import re, html
-          raw=open('.transfer/share.bin','rb').read().decode('utf-8','ignore') if __import__('os').path.exists('.transfer/share.bin') else ''
-          raw=html.unescape(raw)
-          urls=[]
-          for pat in [r'https?://[^"\'<>\\\s]+', r'(?:href|src)=["\']([^"\']+)["\']']:
-              urls += re.findall(pat, raw)
-          seen=[]
-          for u in urls:
-              if isinstance(u, tuple): u=u[0]
-              if u not in seen:
-                  seen.append(u)
-          print('\n'.join(seen))
+          python3 - <<'PY' > .transfer/file_id.txt
+          import json, os, sys
+          data=json.load(open('.transfer/files.json',encoding='utf-8'))
+          name=os.environ['EXPECTED_NAME']; size=int(os.environ['EXPECTED_SIZE'])
+          matches=[f for f in data.get('files',[]) if f.get('fileName')==name and int(f.get('sizeBytes',-1))==size]
+          if len(matches)!=1:
+              print('file listing:',json.dumps(data,ensure_ascii=False),file=sys.stderr)
+              raise SystemExit(f'expected exactly one matching file, got {len(matches)}')
+          print(matches[0]['fileId'])
           PY
-          echo '--- discovered urls ---' >> .transfer/diagnostic.txt
-          sed -n '1,200p' .transfer/urls.txt >> .transfer/diagnostic.txt
+          file_id=$(cat .transfer/file_id.txt)
 
-          n=0
-          while IFS= read -r u; do
-            case "$u" in /*) u="https://firestorage.ai$u" ;; esac
-            case "$u" in http://*|https://*) ;; *) continue ;; esac
-            n=$((n+1)); out=".transfer/candidate-$n.bin"
-            curl -sSL --retry 1 "$u" -o "$out" || continue
-            if verify "$out"; then
-              cp "$out" .transfer/final.zip
-              echo "verified=url-$n" >> .transfer/diagnostic.txt
-              exit 0
-            fi
-          done < .transfer/urls.txt
-          echo 'verified=no' >> .transfer/diagnostic.txt
-          exit 42
+          curl -fsSL --retry 3 --retry-delay 1 \
+            -X POST "$API_BASE/shares/$SHARE_ID/files/$file_id/download" \
+            -H 'Content-Type: application/json' \
+            -o .transfer/download.json
 
-      - name: Commit verified artifact or diagnostic
-        if: always()
+          python3 - <<'PY' > .transfer/download_url.txt
+          import json
+          data=json.load(open('.transfer/download.json',encoding='utf-8'))
+          url=data.get('downloadUrl')
+          if not isinstance(url,str) or not url.startswith('https://'):
+              raise SystemExit('missing HTTPS downloadUrl')
+          print(url)
+          PY
+          download_url=$(cat .transfer/download_url.txt)
+          curl -fsSL --retry 3 --retry-delay 1 "$download_url" -o .transfer/final.zip
+
+          actual_size=$(stat -c '%s' .transfer/final.zip)
+          actual_sha=$(sha256sum .transfer/final.zip | awk '{print $1}')
+          echo "size=$actual_size"
+          echo "sha256=$actual_sha"
+          test "$actual_size" = "$EXPECTED_SIZE"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          unzip -t .transfer/final.zip
+
+          python3 - <<'PY'
+          import zipfile
+          p='.transfer/final.zip'
+          expected={
+            'game/Saved/Mods/lua/mods/lom_vi/IdOverrides.lua',
+            'game/Saved/Mods/lua/mods/lom_vi/SafeLiterals.lua',
+            'game/Saved/Mods/lua/mods/lom_vi/UiLiterals.lua',
+          }
+          with zipfile.ZipFile(p) as z:
+              names=set(z.namelist())
+          if names != expected:
+              raise SystemExit(f'unexpected ZIP tree: {sorted(names)}')
+          print('ZIP tree verified')
+          PY
+
+      - name: Stage verified artifact on test channel
         shell: bash
         run: |
           set -euo pipefail
+          cp .transfer/final.zip channel/translation-2026.09.07.1.zip
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          if [ -f .transfer/final.zip ]; then
-            cp .transfer/final.zip channel/translation-2026.09.07.1.zip
-            sha256sum channel/translation-2026.09.07.1.zip
-            unzip -t channel/translation-2026.09.07.1.zip
-            git add channel/translation-2026.09.07.1.zip
-            git commit -m 'build: stage translation 2026.09.07.1'
-          else
-            cp .transfer/diagnostic.txt channel/r15-transfer-diagnostic.txt
-            git add channel/r15-transfer-diagnostic.txt
-            git commit -m 'test: capture R15 transfer diagnostic'
-          fi
+          git add channel/translation-2026.09.07.1.zip
+          git commit -m 'build: stage translation 2026.09.07.1'
           git push origin HEAD:test/r15-translation
-
-      - name: Enforce verified transfer
-        if: steps.transfer.outcome != 'success'
-        run: exit 42
